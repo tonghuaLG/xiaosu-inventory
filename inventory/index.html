@@ -3,61 +3,86 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>小酥存货展示 · 斗罗大陆H5 库存系统</title>
+<title>小酥存货 · 斗罗大陆H5</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
+/* ===== 全局样式 ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-  background: #03050f;
-  color: #c8d6e5;
+  font-family: 'Microsoft YaHei', 'Noto Sans SC', 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0a0f1e 0%, #1a2d5a 50%, #0d1b36 100%);
+  color: #e0d6c2;
   min-height: 100vh;
   position: relative;
 }
+
+/* 背景装饰 */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background: 
-    radial-gradient(ellipse at 20% 50%, rgba(0, 255, 255, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(255, 0, 255, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(255, 200, 0, 0.03) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 50%, rgba(240, 192, 64, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(123, 45, 142, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(240, 192, 64, 0.03) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Scrollbar */
+/* 斗罗大陆装饰边框 */
+.douluo-border {
+  border: 1px solid rgba(240, 192, 64, 0.3);
+  box-shadow: 0 0 20px rgba(240, 192, 64, 0.1), inset 0 0 20px rgba(240, 192, 64, 0.05);
+}
+
+/* 魂环样式 */
+.soul-ring {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.soul-ring.white { background: linear-gradient(135deg, #ffffff, #e0e0e0); color: #fff; }
+.soul-ring.yellow { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #ffd700; }
+.soul-ring.purple { background: linear-gradient(135deg, #9b59b6, #7b2d8e); color: #9b59b6; }
+.soul-ring.black { background: linear-gradient(135deg, #2c3e50, #1a1a1a); color: #2c3e50; }
+.soul-ring.red { background: linear-gradient(135deg, #ff4444, #cc0000); color: #ff4444; }
+
+/* 武魂图标 */
+.wuhun-icon {
+  font-size: 16px;
+  margin-right: 6px;
+  filter: drop-shadow(0 0 3px rgba(240, 192, 64, 0.5));
+}
+
+/* 滚动条 */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #03050f; }
-::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #00ffff, #ff00ff); border-radius: 3px; }
-
-/* Animated BG grid */
-.grid-bg {
-  position: fixed;
-  inset: 0;
-  background-image: 
-    linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none;
-  z-index: 0;
-  animation: gridDrift 20s linear infinite;
-}
-@keyframes gridDrift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(60px, 60px); }
+::-webkit-scrollbar-track { background: #0a0f1e; }
+::-webkit-scrollbar-thumb { 
+  background: linear-gradient(180deg, #f0c040, #7b2d8e); 
+  border-radius: 3px; 
 }
 
-/* Header */
+/* ===== 头部 ===== */
 .header {
-  background: rgba(3,5,15,0.85);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.95), rgba(13, 27, 54, 0.95));
+  border-bottom: 2px solid rgba(240, 192, 64, 0.4);
   padding: 20px 24px;
   position: sticky;
   top: 0;
   z-index: 100;
   backdrop-filter: blur(16px);
-  box-shadow: 0 0 20px rgba(0,255,255,0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
+
 .header-top {
   display: flex;
   align-items: center;
@@ -67,109 +92,108 @@ body::before {
   max-width: 1500px;
   margin: 0 auto;
 }
+
 .header-left {
   display: flex;
   align-items: center;
   gap: 16px;
 }
+
+/* 标题样式 - 斗罗大陆风格 */
 .logo {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 900;
-  background: linear-gradient(135deg, #00ffff, #ff00ff, #ffff00, #00ffff);
-  background-size: 300% 300%;
+  background: linear-gradient(135deg, #f0c040 0%, #ffd700 50%, #f0c040 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: neonFlow 3s ease infinite;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
+  text-shadow: 0 0 20px rgba(240, 192, 64, 0.5);
+  font-family: 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
 }
-@keyframes neonFlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-.logo::after {
-  content: '✦';
-  -webkit-text-fill-color: initial;
-  color: #ff00ff;
-  margin-left: 4px;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
+
 .logo-sub {
-  font-size: 12px;
-  color: rgba(0,255,255,0.5);
-  font-weight: 300;
+  font-size: 11px;
+  color: rgba(240, 192, 64, 0.6);
   letter-spacing: 3px;
   text-transform: uppercase;
 }
+
 .header-right {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
+
+/* 搜索框 */
 .search-box {
   position: relative;
 }
+
 .search-box input {
-  background: rgba(0,255,255,0.04);
-  border: 1px solid rgba(0,255,255,0.15);
+  background: rgba(26, 45, 90, 0.6);
+  border: 1px solid rgba(240, 192, 64, 0.3);
   border-radius: 8px;
   padding: 8px 14px 8px 36px;
-  color: #00ffff;
+  color: #f0c040;
   font-size: 13px;
   width: 220px;
   outline: none;
-  transition: all .3s;
-  box-shadow: 0 0 6px rgba(0,255,255,0.05);
+  transition: all 0.3s;
 }
-.search-box input::placeholder { color: rgba(0,255,255,0.25); }
+
+.search-box input::placeholder {
+  color: rgba(240, 192, 64, 0.35);
+}
+
 .search-box input:focus {
-  border-color: #ff00ff;
-  background: rgba(255,0,255,0.04);
+  border-color: #f0c040;
   width: 280px;
-  box-shadow: 0 0 16px rgba(255,0,255,0.15);
+  box-shadow: 0 0 15px rgba(240, 192, 64, 0.2);
 }
+
 .search-box .icon {
   position: absolute;
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(0,255,255,0.4);
-  font-size: 14px;
+  color: rgba(240, 192, 64, 0.5);
 }
+
+/* 筛选按钮 */
 .filter-btns {
   display: flex;
   gap: 6px;
-}
-.filter-btn {
-  padding: 6px 14px;
-  border: 1px solid rgba(0,255,255,0.15);
-  border-radius: 20px;
-  background: transparent;
-  color: rgba(0,255,255,0.5);
-  cursor: pointer;
-  font-size: 12px;
-  transition: all .3s;
-  letter-spacing: 1px;
-}
-.filter-btn:hover {
-  border-color: #00ffff;
-  color: #00ffff;
-  box-shadow: 0 0 12px rgba(0,255,255,0.15);
-}
-.filter-btn.active {
-  background: linear-gradient(135deg, rgba(0,255,255,0.12), rgba(255,0,255,0.08));
-  border-color: #ff00ff;
-  color: #fff;
-  box-shadow: 0 0 16px rgba(255,0,255,0.15);
+  flex-wrap: wrap;
 }
 
-/* Stats Bar */
+.filter-btn {
+  padding: 6px 14px;
+  border: 1px solid rgba(240, 192, 64, 0.25);
+  border-radius: 20px;
+  background: transparent;
+  color: rgba(240, 192, 64, 0.6);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+  letter-spacing: 1px;
+}
+
+.filter-btn:hover {
+  border-color: #f0c040;
+  color: #f0c040;
+  box-shadow: 0 0 10px rgba(240, 192, 64, 0.2);
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, rgba(240, 192, 64, 0.15), rgba(123, 45, 142, 0.1));
+  border-color: #f0c040;
+  color: #f0c040;
+  font-weight: 600;
+}
+
+/* ===== 统计卡片 ===== */
 .stats-bar {
   max-width: 1500px;
   margin: 0 auto;
@@ -180,109 +204,79 @@ body::before {
   position: relative;
   z-index: 1;
 }
+
 .stat-card {
-  background: rgba(0,255,255,0.03);
-  border: 1px solid rgba(0,255,255,0.08);
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.4), rgba(13, 27, 54, 0.4));
+  border: 1px solid rgba(240, 192, 64, 0.2);
   border-radius: 12px;
   padding: 14px 16px;
   text-align: center;
-  transition: all .3s;
-  position: relative;
-  overflow: hidden;
+  transition: all 0.3s;
 }
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 20%;
-  right: 20%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #00ffff, transparent);
-  opacity: 0.5;
-}
+
 .stat-card:hover {
-  border-color: rgba(0,255,255,0.25);
-  box-shadow: 0 0 20px rgba(0,255,255,0.08);
+  border-color: rgba(240, 192, 64, 0.4);
+  box-shadow: 0 4px 15px rgba(240, 192, 64, 0.15);
   transform: translateY(-2px);
 }
+
 .stat-card .num {
   font-size: 24px;
   font-weight: 900;
-  background: linear-gradient(135deg, #00ffff, #ff00ff);
+  background: linear-gradient(135deg, #f0c040, #ffd700);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: 1px;
 }
+
 .stat-card .label {
   font-size: 10px;
-  color: rgba(0,255,255,0.4);
+  color: rgba(240, 192, 64, 0.5);
   margin-top: 4px;
   letter-spacing: 2px;
-  text-transform: uppercase;
 }
-.stat-card.prize .num { background: linear-gradient(135deg, #ff00ff, #ffff00); -webkit-background-clip: text; background-clip: text; }
-.stat-card.cigar .num { background: linear-gradient(135deg, #ffff00, #ff6600); -webkit-background-clip: text; background-clip: text; }
 
-/* Main Content */
-.main { 
-  max-width: 1500px; 
-  margin: 0 auto; 
+/* ===== 主内容区 ===== */
+.main {
+  max-width: 1500px;
+  margin: 0 auto;
   padding: 20px 24px 60px;
   position: relative;
   z-index: 1;
 }
 
-/* Server Group */
 .server-group {
   margin-bottom: 32px;
 }
+
 .group-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
-  color: #00ffff;
+  color: #f0c040;
   margin-bottom: 12px;
-  border-left: 3px solid #ff00ff;
+  border-left: 3px solid #7b2d8e;
   padding-left: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
-  text-shadow: 0 0 10px rgba(0,255,255,0.3);
-  letter-spacing: 1px;
-}
-.group-title span.count {
-  font-size: 11px;
-  font-weight: 400;
-  color: rgba(0,255,255,0.35);
-  letter-spacing: 0;
+  text-shadow: 0 0 10px rgba(240, 192, 64, 0.3);
 }
 
-/* Server Card */
+/* 服务器卡片 */
 .server-card {
-  background: linear-gradient(135deg, rgba(0,255,255,0.02) 0%, rgba(255,0,255,0.02) 100%);
-  border: 1px solid rgba(0,255,255,0.08);
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.3), rgba(13, 27, 54, 0.3));
+  border: 1px solid rgba(240, 192, 64, 0.15);
   border-radius: 14px;
   margin-bottom: 14px;
   overflow: hidden;
-  transition: all .3s;
-  position: relative;
+  transition: all 0.3s;
 }
-.server-card::after {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,255,255,0.3), rgba(255,0,255,0.3), transparent);
-  opacity: 0;
-  transition: opacity .3s;
-}
+
 .server-card:hover {
-  border-color: rgba(0,255,255,0.2);
-  box-shadow: 0 0 24px rgba(0,255,255,0.06);
+  border-color: rgba(240, 192, 64, 0.3);
+  box-shadow: 0 4px 20px rgba(240, 192, 64, 0.1);
 }
-.server-card:hover::after { opacity: 1; }
+
 .server-card-header {
   display: flex;
   align-items: center;
@@ -290,81 +284,86 @@ body::before {
   padding: 14px 18px;
   cursor: pointer;
   user-select: none;
-  transition: background .3s;
+  transition: background 0.3s;
 }
-.server-card-header:hover { background: rgba(0,255,255,0.02); }
+
+.server-card-header:hover {
+  background: rgba(240, 192, 64, 0.05);
+}
+
 .server-card-header .name {
   font-size: 15px;
   font-weight: 600;
-  color: #e0f0ff;
+  color: #e0d6c2;
   display: flex;
   align-items: center;
   gap: 10px;
-  text-shadow: 0 0 8px rgba(0,255,255,0.1);
 }
-.server-card-header .name .badge {
+
+.badge {
   font-size: 10px;
   padding: 2px 10px;
   border-radius: 10px;
   font-weight: 600;
-  letter-spacing: 1px;
 }
-.badge-wan { 
-  background: rgba(0,255,255,0.08); 
-  color: #00ffff; 
-  border: 1px solid rgba(0,255,255,0.15);
+
+.badge-wan {
+  background: rgba(123, 45, 142, 0.15);
+  color: #b088d8;
+  border: 1px solid rgba(123, 45, 142, 0.3);
 }
-.badge-huang { 
-  background: rgba(255,255,0,0.06); 
-  color: #ffff00; 
-  border: 1px solid rgba(255,255,0,0.12);
+
+.badge-huang {
+  background: rgba(240, 192, 64, 0.1);
+  color: #f0c040;
+  border: 1px solid rgba(240, 192, 64, 0.25);
 }
-.badge-xiong { 
-  background: rgba(255,0,255,0.06); 
-  color: #ff00ff; 
-  border: 1px solid rgba(255,0,255,0.12);
-}
+
 .server-card-header .summary {
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: rgba(0,255,255,0.4);
-}
-.server-card-header .summary span { white-space: nowrap; }
-.server-card-header .arrow {
-  color: rgba(0,255,255,0.3);
-  font-size: 14px;
-  transition: transform .3s, color .3s;
-  margin-left: 8px;
-}
-.server-card:hover .arrow { color: #00ffff; }
-.server-card.open .arrow { 
-  transform: rotate(180deg); 
-  color: #ff00ff;
+  color: rgba(240, 192, 64, 0.5);
 }
 
-/* Content Grid */
+.server-card-header .arrow {
+  color: rgba(240, 192, 64, 0.4);
+  font-size: 14px;
+  transition: transform 0.3s;
+}
+
+.server-card.open .arrow {
+  transform: rotate(180deg);
+  color: #f0c040;
+}
+
 .server-content {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.server-card.open .server-content { max-height: 4000px; }
+
+.server-card.open .server-content {
+  max-height: 4000px;
+}
+
 .server-content-inner {
   padding: 0 18px 18px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 10px;
 }
+
+/* 分类块 */
 .category-block {
-  background: rgba(0,255,255,0.02);
-  border: 1px solid rgba(0,255,255,0.06);
+  background: rgba(26, 45, 90, 0.25);
+  border: 1px solid rgba(240, 192, 64, 0.12);
   border-radius: 10px;
   padding: 12px 14px;
-  transition: all .3s;
   position: relative;
   overflow: hidden;
 }
+
 .category-block::before {
   content: '';
   position: absolute;
@@ -372,222 +371,315 @@ body::before {
   left: 0;
   width: 2px;
   height: 100%;
-  background: linear-gradient(180deg, #00ffff, #ff00ff);
-  opacity: 0.3;
+  background: linear-gradient(180deg, #f0c040, #7b2d8e);
+  opacity: 0.4;
 }
-.category-block:hover {
-  border-color: rgba(0,255,255,0.15);
-  box-shadow: 0 0 12px rgba(0,255,255,0.04);
-}
+
 .category-title {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(0,255,255,0.6);
+  color: rgba(240, 192, 64, 0.7);
   margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  letter-spacing: 1px;
 }
-.category-title .count-badge {
-  font-size: 10px;
-  background: rgba(0,255,255,0.06);
-  padding: 1px 6px;
-  border-radius: 6px;
-  color: rgba(0,255,255,0.5);
-  border: 1px solid rgba(0,255,255,0.06);
-}
+
 .item-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 5px 0;
-  border-bottom: 1px solid rgba(0,255,255,0.03);
+  border-bottom: 1px solid rgba(240, 192, 64, 0.06);
   font-size: 13px;
-  transition: all .2s;
 }
-.item-row:hover {
-  background: rgba(0,255,255,0.02);
-  padding-left: 4px;
-  border-radius: 4px;
+
+.item-row:last-child {
+  border-bottom: none;
 }
-.item-row:last-child { border-bottom: none; }
-.item-name { color: rgba(200,220,240,0.8); }
+
+.item-name {
+  color: rgba(224, 214, 194, 0.8);
+}
+
 .item-qty {
   font-weight: 700;
-  color: #e0f0ff;
+  color: #e0d6c2;
   min-width: 36px;
   text-align: right;
 }
-.item-qty.high { 
-  color: #ffff00; 
-}
-.item-qty.vhigh { 
-  color: #ff00ff; 
-}
-.empty-text {
-  color: rgba(0,255,255,0.15);
-  font-size: 12px;
-  font-style: italic;
+
+.item-qty.high {
+  color: #f0c040;
 }
 
-/* Hidden filter */
-.server-card.hidden { display: none; }
+.item-qty.vhigh {
+  color: #ff6b6b;
+}
 
-/* ===== 订单记录页样式 ===== */
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+.item-buy {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: rgba(240, 192, 64, 0.1);
+  color: #f0c040;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid rgba(240, 192, 64, 0.25);
+  transition: all 0.2s;
+}
 
-.order-page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 24px;
+.item-buy:hover {
+  background: rgba(240, 192, 64, 0.2);
+  border-color: #f0c040;
+  box-shadow: 0 0 10px rgba(240, 192, 64, 0.3);
 }
-.order-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #00ffff;
-  border-left: 3px solid #ff00ff;
-  padding-left: 12px;
-  margin-bottom: 20px;
-  text-shadow: 0 0 10px rgba(0,255,255,0.3);
+
+.server-card.hidden {
+  display: none;
 }
-.order-form {
-  background: rgba(0,255,255,0.03);
-  border: 1px solid rgba(0,255,255,0.08);
-  border-radius: 14px;
-  padding: 20px 24px;
-  margin-bottom: 24px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+
+/* ===== 下单弹窗 ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
 }
-.order-form .form-group {
+
+.modal-overlay.show {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
-.order-form .form-group.full { grid-column: 1 / -1; }
-.order-form label {
+
+.modal {
+  background: linear-gradient(135deg, #1a2d5a, #0d1b36);
+  border: 2px solid rgba(240, 192, 64, 0.4);
+  border-radius: 16px;
+  padding: 28px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 0 40px rgba(240, 192, 64, 0.2);
+}
+
+.modal h2 {
+  color: #f0c040;
+  font-size: 18px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(240, 192, 64, 0.3);
+}
+
+.modal .form-group {
+  margin-bottom: 14px;
+}
+
+.modal label {
+  display: block;
   font-size: 12px;
-  color: rgba(0,255,255,0.6);
-  letter-spacing: 1px;
+  color: rgba(240, 192, 64, 0.6);
+  margin-bottom: 6px;
 }
-.order-form select,
-.order-form input[type="text"],
-.order-form input[type="number"] {
-  background: rgba(0,255,255,0.04);
-  border: 1px solid rgba(0,255,255,0.15);
+
+.modal input,
+.modal select {
+  width: 100%;
+  background: rgba(26, 45, 90, 0.5);
+  border: 1px solid rgba(240, 192, 64, 0.25);
   border-radius: 8px;
-  padding: 8px 12px;
-  color: #e0f0ff;
+  padding: 10px 12px;
+  color: #e0d6c2;
   font-size: 14px;
   outline: none;
-  transition: border-color .3s;
+  transition: all 0.3s;
 }
-.order-form select:focus,
-.order-form input[type="text"]:focus,
-.order-form input[type="number"]:focus {
-  border-color: #ff00ff;
+
+.modal input:focus,
+.modal select:focus {
+  border-color: #f0c040;
+  box-shadow: 0 0 10px rgba(240, 192, 64, 0.2);
 }
-.order-form select option {
-  background: #0a0f1e;
-  color: #c8d6e5;
-}
-.order-form .hint {
+
+.modal .hint {
   font-size: 11px;
-  color: rgba(0,255,255,0.35);
+  color: rgba(240, 192, 64, 0.4);
+  margin-top: 4px;
   min-height: 16px;
 }
-.order-form .hint.error { color: #ff4466; }
-.order-form .hint.ok { color: #44ff88; }
-.order-form .btn-row { grid-column: 1 / -1; display: flex; gap: 10px; }
-.btn-neon {
-  padding: 8px 22px;
-  border: 1px solid rgba(0,255,255,0.2);
+
+.modal .hint.error {
+  color: #ff6b6b;
+}
+
+.modal .hint.ok {
+  color: #51cf66;
+}
+
+.modal .btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-gold {
+  padding: 10px 24px;
+  border: 1px solid rgba(240, 192, 64, 0.3);
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(0,255,255,0.08), rgba(255,0,255,0.05));
-  color: #00ffff;
-  font-size: 13px;
+  background: linear-gradient(135deg, rgba(240, 192, 64, 0.12), rgba(123, 45, 142, 0.08));
+  color: #f0c040;
+  font-size: 14px;
   cursor: pointer;
-  transition: all .3s;
-  letter-spacing: 1px;
+  transition: all 0.3s;
+  flex: 1;
 }
-.btn-neon:hover {
-  border-color: #ff00ff;
+
+.btn-gold:hover {
+  border-color: #f0c040;
   color: #fff;
-  box-shadow: 0 0 16px rgba(255,0,255,0.2);
+  box-shadow: 0 0 16px rgba(240, 192, 64, 0.3);
+  background: linear-gradient(135deg, rgba(240, 192, 64, 0.25), rgba(123, 45, 142, 0.15));
 }
-.btn-neon.danger {
-  border-color: rgba(255,68,102,0.3);
-  color: #ff6688;
+
+.btn-gold.cancel {
+  color: rgba(240, 192, 64, 0.5);
+  border-color: rgba(240, 192, 64, 0.15);
 }
-.btn-neon.danger:hover {
-  border-color: #ff4466;
-  box-shadow: 0 0 16px rgba(255,68,102,0.2);
+
+.btn-gold.cancel:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
 }
-.order-table-wrap {
-  background: rgba(0,255,255,0.02);
-  border: 1px solid rgba(0,255,255,0.06);
-  border-radius: 14px;
-  padding: 16px 20px;
-  overflow-x: auto;
-}
-.order-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.order-table th {
-  text-align: left;
-  padding: 8px 10px;
-  color: rgba(0,255,255,0.5);
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 1px;
-  border-bottom: 1px solid rgba(0,255,255,0.08);
-}
-.order-table td {
-  padding: 7px 10px;
-  border-bottom: 1px solid rgba(0,255,255,0.03);
-  color: rgba(200,220,240,0.8);
-}
-.order-table tr:hover td {
-  background: rgba(0,255,255,0.02);
-}
-.order-table .td-del {
-  color: #ff4466;
-  cursor: pointer;
-  font-size: 15px;
-}
-.order-table .td-del:hover { color: #ff0011; }
-.order-empty {
-  color: rgba(0,255,255,0.2);
-  font-size: 13px;
-  font-style: italic;
+
+.modal .success-msg {
+  display: none;
   text-align: center;
-  padding: 24px 0;
+  padding: 20px 0;
+}
+
+.modal .success-msg .icon {
+  font-size: 48px;
+}
+
+.modal .success-msg .text {
+  color: #51cf66;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.empty-text {
+  color: rgba(240, 192, 64, 0.2);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* 提示消息 */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+  animation-fill-mode: forwards;
+}
+
+.toast.success {
+  background: rgba(81, 207, 102, 0.9);
+  color: #000;
+  border: 1px solid rgba(81, 207, 102, 0.5);
+}
+
+.toast.error {
+  background: rgba(255, 107, 107, 0.9);
+  color: #fff;
+  border: 1px solid rgba(255, 107, 107, 0.5);
+}
+
+.toast.info {
+  background: rgba(240, 192, 64, 0.9);
+  color: #000;
+  border: 1px solid rgba(240, 192, 64, 0.5);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ===== 响应式设计 ===== */
+@media (max-width: 768px) {
+  .header-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-left {
+    justify-content: center;
+  }
+  
+  .header-right {
+    flex-direction: column;
+  }
+  
+  .search-box input {
+    width: 100%;
+  }
+  
+  .search-box input:focus {
+    width: 100%;
+  }
+  
+  .filter-btns {
+    justify-content: center;
+  }
+  
+  .stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .server-content-inner {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
-<script src="data.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+<!-- 同步状态指示器 -->
+<div id="sync-status" style="display:none;"></div>
 
-<div class="grid-bg"></div>
+<!-- 装饰元素：魂环漂浮动画 -->
+<div id="floatingRings"></div>
 
 <div class="header">
   <div class="header-top">
     <div class="header-left">
-      <div class="logo">小酥存货</div>
-      <div class="logo-sub">斗罗大陆H5 · 跨服库存</div>
+      <div class="logo">🎮 小酥存货 · 斗罗大陆H5</div>
+      <div class="logo-sub">跨服库存系统</div>
     </div>
     <div class="header-right">
       <div class="search-box">
         <span class="icon">🔍</span>
         <input type="text" id="searchInput" placeholder="搜索服务器 / 物品名称..." oninput="filterAll()">
       </div>
-      <div class="filter-btns">
+      <div class="filter-btns" id="filterBtns">
         <button class="filter-btn active" data-group="all" onclick="filterGroup(this, 'all')">全部</button>
         <button class="filter-btn" data-group="天使黄金" onclick="filterGroup(this, '天使黄金')">👑 天使黄金</button>
         <button class="filter-btn" data-group="天使爆爽" onclick="filterGroup(this, '天使爆爽')">💥 天使爆爽</button>
@@ -597,127 +689,129 @@ body::before {
         <button class="filter-btn" data-group="神龍界域" onclick="filterGroup(this, '神龍界域')">🐉 神龍界域</button>
         <button class="filter-btn" data-group="诸天万域" onclick="filterGroup(this, '诸天万域')">🌌 诸天万域</button>
       </div>
-      <div class="filter-btns" style="margin-left:8px;">
-        <button class="filter-btn" id="btnTabStock" onclick="switchTab('stock')" style="background:rgba(0,255,255,0.10);border-color:#00ffff;color:#00ffff;">📦 库存浏览</button>
-        <button class="filter-btn" id="btnTabOrder" onclick="switchTab('order')">📝 订单记录</button>
-      </div>
     </div>
   </div>
 </div>
 
 <div class="stats-bar" id="statsBar"></div>
+<div class="main" id="app"></div>
 
-<div class="main" id="appStock"></div>
-<div class="main" id="appOrder" style="display:none;">
-  <div class="order-page">
-    <div class="order-title">📝 订单记录</div>
-    <div class="order-form" id="orderForm">
+<!-- 下单弹窗 -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal">
+    <div id="orderForm">
+      <h2>📝 下单购买</h2>
       <div class="form-group">
         <label>区服</label>
-        <select id="orderServer" onchange="onOrderServerChange()">
-          <option value="">-- 选择区服 --</option>
-        </select>
+        <input type="text" id="mServer" readonly>
       </div>
       <div class="form-group">
-        <label>收货玩家</label>
-        <input type="text" id="orderBuyer" placeholder="输入玩家名">
+        <label>收货玩家名</label>
+        <input type="text" id="mBuyer" placeholder="请输入你的游戏名">
       </div>
       <div class="form-group">
         <label>物品名称</label>
-        <select id="orderItem" onchange="onOrderItemChange()">
-          <option value="">-- 先选择区服 --</option>
-        </select>
+        <input type="text" id="mItem" readonly>
       </div>
       <div class="form-group">
         <label>购买数量</label>
-        <input type="number" id="orderQty" min="1" value="1" oninput="onOrderQtyChange()">
-        <div class="hint" id="orderHint">库存：--</div>
+        <input type="number" id="mQty" min="1" value="1" oninput="checkQty()">
+        <div class="hint" id="mHint">库存：--</div>
       </div>
-      <div class="form-group">
-        <label>平台版本</label>
-        <input type="text" id="orderPlatform" value="天使黄金" readonly style="opacity:0.7;cursor:default;">
-      </div>
-      <div class="form-group full btn-row">
-        <button class="btn-neon" onclick="addOrder()">＋ 添加订单</button>
-        <button class="btn-neon" onclick="exportOrders()">📊 导出 .xls</button>
-        <button class="btn-neon danger" onclick="clearOrders()">🗑 清空订单</button>
+      <div class="btn-row">
+        <button class="btn-gold cancel" onclick="closeModal()">取消</button>
+        <button class="btn-gold" onclick="submitOrder()">确认下单</button>
       </div>
     </div>
-    <div class="order-table-wrap">
-      <table class="order-table" id="orderTable">
-        <thead><tr>
-          <th>#</th><th>区服</th><th>收货玩家</th><th>物品名称</th><th>数量</th><th>平台版本</th><th></th>
-        </tr></thead>
-        <tbody id="orderTbody">
-        </tbody>
-      </table>
-      <div class="order-empty" id="orderEmpty">暂无订单，请上方添加</div>
+    <div class="success-msg" id="successMsg">
+      <div class="icon">✅</div>
+      <div class="text">下单成功！请等待发货</div>
     </div>
   </div>
 </div>
 
+<script src="data.js"></script>
+<script src="storage.js"></script>
 <script>
-// ===== 数据区：在此粘贴你的存货数据 =====
-// rawData 已分离到 data.js
-// ===== 渲染逻辑 =====
-const app = document.getElementById('appStock');
-const appOrder = document.getElementById('appOrder');
-const statsBar = document.getElementById('statsBar');
 let currentGroup = 'all';
 let currentSearch = '';
-let currentTab = 'stock';
+let orderServer = '';
+let orderCategory = '';
+let orderItem = '';
+let orderStock = 0;
+
+// 初始化加载库存（直接从 data.js 的 rawData 变量读取）
+async function loadInventory() {
+  try {
+    // 【关键】初始化 Firebase 云同步（会加载数据并应用库存修改）
+    await Storage.initCloudSync();
+    
+    // 监听库存修改更新（多端同步：下单/补货后所有页面自动刷新）
+    window.addEventListener('inventoryModsUpdated', async (e) => {
+      console.log('[Player] 收到库存修改更新，重新渲染...');
+      await Storage.applyInventoryMods();
+      render();
+      renderStats();
+    });
+    
+    if (typeof rawData === 'undefined') {
+      document.getElementById('app').innerHTML = '<div style="text-align:center;padding:60px;color:#ff6b6b;">⚠ 库存数据加载失败，请检查 data.js 文件</div>';
+      return;
+    }
+    render();
+    renderStats();
+
+    // 添加漂浮魂环装饰
+    createFloatingRings();
+  } catch(e) {
+    document.getElementById('app').innerHTML = '<div style="text-align:center;padding:60px;color:#ff6b6b;">⚠ 数据解析错误：' + e.message + '</div>';
+  }
+}
+
+// 创建漂浮魂环装饰
+function createFloatingRings() {
+  const container = document.getElementById('floatingRings');
+  const ringColors = ['#f0c040', '#9b59b6', '#ffd700', '#ff6b6b'];
+  
+  for (let i = 0; i < 5; i++) {
+    const ring = document.createElement('div');
+    ring.style.cssText = `
+      position: fixed;
+      width: ${20 + Math.random() * 40}px;
+      height: ${20 + Math.random() * 40}px;
+      border-radius: 50%;
+      background: radial-gradient(circle, ${ringColors[i % 4]}22 0%, transparent 70%);
+      border: 2px solid ${ringColors[i % 4]}33;
+      left: ${Math.random() * 100}%;
+      top: ${Math.random() * 100}%;
+      pointer-events: none;
+      z-index: 0;
+      animation: float ${10 + Math.random() * 20}s ease-in-out infinite;
+      opacity: 0.3;
+    `;
+    container.appendChild(ring);
+  }
+  
+  // 添加动画样式
+  if (!document.getElementById('floatAnimation')) {
+    const style = document.createElement('style');
+    style.id = 'floatAnimation';
+    style.textContent = `
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        25% { transform: translate(20px, -20px) scale(1.1); }
+        50% { transform: translate(-10px, 10px) scale(0.9); }
+        75% { transform: translate(15px, 15px) scale(1.05); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
 
 function getQtyClass(q) {
   if (q >= 200) return 'vhigh';
   if (q >= 80) return 'high';
   return '';
-}
-
-function renderStats() {
-  const totalServers = rawData.length;
-  let totalItems = 0;
-  const allItems = {};
-  const usedServers = rawData.filter(s => {
-    for (const c of s.items) {
-      if (c.list.length > 0) return true;
-    }
-    return false;
-  }).length;
-
-  rawData.forEach(s => {
-    s.items.forEach(cat => {
-      cat.list.forEach(item => {
-        totalItems += item.q;
-        allItems[item.n] = (allItems[item.n] || 0) + item.q;
-      });
-    });
-  });
-
-  const topItem = Object.entries(allItems).sort((a,b) => b[1]-a[1])[0];
-  const prizeTotal = rawData.reduce((sum, s) => {
-    let p = 0;
-    s.items.forEach(cat => {
-      if (cat.cat !== '背包' && cat.cat !== '雪茄') {
-        cat.list.forEach(item => p += item.q);
-      }
-    });
-    return sum + p;
-  }, 0);
-
-  statsBar.innerHTML = `
-    <div class="stat-card"><div class="num">${totalServers}</div><div class="label">管理服务器</div></div>
-    <div class="stat-card"><div class="num">${usedServers}</div><div class="label">有库存服务器</div></div>
-    <div class="stat-card"><div class="num">${totalItems.toLocaleString()}</div><div class="label">总物品数量</div></div>
-    <div class="stat-card prize"><div class="num">${prizeTotal.toLocaleString()}</div><div class="label">大奖/小奖数量</div></div>
-    <div class="stat-card cigar"><div class="num">${topItem ? topItem[1].toLocaleString() : 0}</div><div class="label">最多物品: ${topItem ? topItem[0] : '-'}</div></div>
-  `;
-}
-
-function getBadge(serverName) {
-  if (serverName.includes('万魂')) return 'badge-wan';
-  if (serverName.includes('黄金')) return 'badge-huang';
-  if (serverName.includes('神龍')) return 'badge-xiong';
-  return 'badge-huang';
 }
 
 function getShortGroup(name) {
@@ -731,94 +825,10 @@ function getShortGroup(name) {
   return '天使黄金';
 }
 
-function countItems(data) {
-  let c = 0;
-  data.forEach(cat => { c += cat.list.length; });
-  return c;
-}
-
-function render() {
-  renderStats();
-
-  const groups = {};
-  rawData.forEach(s => {
-    const g = s.group;
-    if (!groups[g]) groups[g] = [];
-    groups[g].push(s);
-  });
-
-  const groupOrder = ['天使黄金', '天使爆爽', '天使集结', '天使周年', '天使万魂', '神龍界域', '诸天万域'];
-  let html = '';
-
-  groupOrder.forEach(g => {
-    if (!groups[g]) return;
-    const servers = groups[g];
-    const visibleServers = servers.filter(s => isServerVisible(s));
-    if (visibleServers.length === 0) return;
-
-    const badgeClass = getBadge(servers[0].server);
-    html += `<div class="server-group" data-group-name="${g}">
-      <div class="group-title">
-        ${g === '天使黄金' ? '👑' : g === '天使爆爽' ? '💥' : g === '天使集结' ? '⚔️' : g === '天使周年' ? '🎂' : g === '天使万魂' ? '⚔️' : g === '神龍界域' ? '🐉' : '🌌'}
-        ${g}大区
-        <span class="count">${visibleServers.length} 个服务器</span>
-      </div>`;
-
-    servers.forEach(s => {
-      const totalQty = s.items.reduce((sum, cat) => sum + cat.list.reduce((s2, item) => s2 + item.q, 0), 0);
-      const itemCount = countItems(s.items);
-      const classes = `server-card ${isServerVisible(s) ? '' : 'hidden'}`;
-
-      html += `<div class="${classes}" data-server="${s.server}" data-group="${s.group}">
-        <div class="server-card-header" onclick="toggleServer(this)">
-          <div class="name">
-            ${s.server}
-            <span class="badge ${badgeClass}">${getShortGroup(s.server)}</span>
-          </div>
-          <div class="summary">
-            <span>📦 ${itemCount} 类物品</span>
-            <span>📊 ${totalQty.toLocaleString()} 件</span>
-          </div>
-          <div class="arrow">▼</div>
-        </div>
-        <div class="server-content">
-          <div class="server-content-inner">
-            ${renderCategories(s.items)}
-          </div>
-        </div>
-      </div>`;
-    });
-
-    html += `</div>`;
-  });
-
-  app.innerHTML = html;
-}
-
-function renderCategories(categories) {
-  let html = '';
-  categories.forEach(cat => {
-    if (cat.list.length === 0) {
-      html += `<div class="category-block">
-        <div class="category-title">${cat.cat}</div>
-        <div class="empty-text">暂无可展示商品</div>
-      </div>`;
-      return;
-    }
-    html += `<div class="category-block">
-      <div class="category-title">
-        ${catIcon(cat.cat)} ${cat.cat}
-        <span class="count-badge">${cat.list.length}</span>
-      </div>`;
-    cat.list.forEach(item => {
-      html += `<div class="item-row">
-        <span class="item-name">${item.n.includes('雪茄') ? '🚬' : '🎁'} ${item.n}</span>
-        <span class="item-qty ${getQtyClass(item.q)}">×${item.q}</span>
-      </div>`;
-    });
-    html += `</div>`;
-  });
-  return html;
+function getBadge(serverName) {
+  if (serverName.includes('万魂')) return 'badge-wan';
+  if (serverName.includes('黄金')) return 'badge-huang';
+  return 'badge-huang';
 }
 
 function catIcon(name) {
@@ -830,14 +840,46 @@ function catIcon(name) {
   return '📦';
 }
 
-function toggleServer(header) {
-  const card = header.closest('.server-card');
-  card.classList.toggle('open');
+function renderStats() {
+  let totalItems = 0;
+  const allItems = {};
+  rawData.forEach(s => {
+    s.items.forEach(cat => {
+      cat.list.forEach(item => {
+        totalItems += item.q;
+        allItems[item.n] = (allItems[item.n] || 0) + item.q;
+      });
+    });
+  });
+  const usedServers = rawData.filter(s => s.items.some(c => c.list.length > 0)).length;
+  const topItem = Object.entries(allItems).sort((a,b) => b[1]-a[1])[0];
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card">
+      <div class="num">${rawData.length}</div>
+      <div class="label">服务器总数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">${usedServers}</div>
+      <div class="label">有库存服务器</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">${totalItems.toLocaleString()}</div>
+      <div class="label">总物品数量</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">${Object.keys(allItems).length}</div>
+      <div class="label">物品种类</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="font-size:16px;">${topItem ? topItem[0] : '-'}</div>
+      <div class="label">最多物品 (${topItem ? topItem[1] : 0})</div>
+    </div>
+  `;
 }
 
 function isServerVisible(server) {
   if (currentSearch === '' && currentGroup === 'all') return true;
-  if (currentGroup !== 'all' && !server.server.includes(currentGroup)) return false;
+  if (currentGroup !== 'all' && !server.group.includes(currentGroup)) return false;
   if (currentSearch !== '') {
     const s = currentSearch.toLowerCase();
     if (server.server.toLowerCase().includes(s)) return true;
@@ -849,6 +891,74 @@ function isServerVisible(server) {
     return false;
   }
   return true;
+}
+
+function render() {
+  const groups = {};
+  rawData.forEach(s => {
+    const g = s.group;
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(s);
+  });
+  const groupOrder = ['天使黄金', '天使爆爽', '天使集结', '天使周年', '天使万魂', '神龍界域', '诸天万域'];
+  let html = '';
+
+  groupOrder.forEach(g => {
+    if (!groups[g]) return;
+    const servers = groups[g];
+    const visibleServers = servers.filter(s => isServerVisible(s));
+    if (visibleServers.length === 0) return;
+
+    const icons = {'天使黄金':'👑','天使爆爽':'💥','天使集结':'⚔️','天使周年':'🎂','天使万魂':'⚔️','神龍界域':'🐉','诸天万域':'🌌'};
+    html += `<div class="server-group">
+      <div class="group-title">${icons[g]||'📦'} ${g}大区 <span class="count" style="font-size:11px;font-weight:400;color:rgba(240,192,64,0.4)">${visibleServers.length} 个服务器</span></div>`;
+
+    servers.forEach(s => {
+      const totalQty = s.items.reduce((sum, cat) => sum + cat.list.reduce((s2, item) => s2 + item.q, 0), 0);
+      const itemCount = s.items.reduce((c, cat) => c + cat.list.length, 0);
+      const cls = isServerVisible(s) ? '' : 'hidden';
+      const badgeClass = getBadge(s.server);
+
+      html += `<div class="server-card ${cls}" data-server="${s.server}">
+        <div class="server-card-header" onclick="toggleServer(this)">
+          <div class="name">${s.server} <span class="badge ${badgeClass}">${getShortGroup(s.server)}</span></div>
+          <div class="summary"><span>📦 ${itemCount} 类</span><span>📊 ${totalQty.toLocaleString()} 件</span></div>
+          <div class="arrow">▼</div>
+        </div>
+        <div class="server-content">
+          <div class="server-content-inner">${renderCategories(s)}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  document.getElementById('app').innerHTML = html;
+}
+
+function renderCategories(server) {
+  let html = '';
+  server.items.forEach(cat => {
+    if (cat.list.length === 0) {
+      html += `<div class="category-block"><div class="category-title">${catIcon(cat.cat)} ${cat.cat}</div><div class="empty-text">暂无</div></div>`;
+      return;
+    }
+    html += `<div class="category-block">
+      <div class="category-title">${catIcon(cat.cat)} ${cat.cat} <span style="font-size:10px;background:rgba(240,192,64,0.08);padding:1px 6px;border-radius:6px;color:rgba(240,192,64,0.5)">${cat.list.length}</span></div>`;
+    cat.list.forEach(item => {
+      html += `<div class="item-row">
+        <span class="item-name">${item.n.includes('雪茄') ? '🚬' : '🎁'} ${item.n}</span>
+        <span><span class="item-qty ${getQtyClass(item.q)}">×${item.q}</span>
+        <span class="item-buy" data-sv="${server.server}" data-cat="${cat.cat}" data-item="${item.n}" data-qty="${item.q}" onclick="handleBuy(this)">购买</span></span>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  return html;
+}
+
+function toggleServer(header) {
+  header.closest('.server-card').classList.toggle('open');
 }
 
 function filterGroup(btn, group) {
@@ -863,214 +973,121 @@ function filterAll() {
   render();
 }
 
-// 初始化
-render();
-setTimeout(() => {
-  document.querySelectorAll('.server-card:not(.hidden)').forEach((card, i) => {
-    if (i < 3) card.classList.add('open');
-  });
-}, 100);
+// ===== 下单功能 =====
 
-// ===== 标签页切换 =====
-function switchTab(tab) {
-  currentTab = tab;
-  document.getElementById('appStock').style.display = tab === 'stock' ? '' : 'none';
-  document.getElementById('appOrder').style.display = tab === 'order' ? '' : 'none';
-  document.getElementById('statsBar').style.display = tab === 'stock' ? '' : 'none';
-  var btnStock = document.getElementById('btnTabStock');
-  var btnOrder = document.getElementById('btnTabOrder');
-  btnStock.style.background = tab === 'stock' ? 'rgba(0,255,255,0.10)' : '';
-  btnStock.style.borderColor = tab === 'stock' ? '#00ffff' : '';
-  btnStock.style.color = tab === 'stock' ? '#00ffff' : '';
-  btnOrder.style.background = tab === 'order' ? 'rgba(0,255,255,0.10)' : '';
-  btnOrder.style.borderColor = tab === 'order' ? '#00ffff' : '';
-  btnOrder.style.color = tab === 'order' ? '#00ffff' : '';
-  if (tab === 'order') initOrderPage();
+function handleBuy(el) {
+  const sv = el.getAttribute('data-sv');
+  const cat = el.getAttribute('data-cat');
+  const item = el.getAttribute('data-item');
+  const qty = parseInt(el.getAttribute('data-qty'));
+  openOrder(sv, cat, item, qty);
 }
 
-// ===== 订单功能 =====
-let orders = [];
-
-function getInventoryQty(serverName, itemName) {
-  var sv = rawData.find(function(s){ return s.server === serverName; });
-  if (!sv) return 0;
-  var qty = 0;
-  sv.items.forEach(function(cat){
-    cat.list.forEach(function(item){
-      if (item.n === itemName) qty += item.q;
-    });
-  });
-  return qty;
+function openOrder(server, category, item, stock) {
+  orderServer = server;
+  orderCategory = category;
+  orderItem = item;
+  orderStock = stock;
+  document.getElementById('mServer').value = server;
+  document.getElementById('mItem').value = item;
+  document.getElementById('mQty').value = 1;
+  document.getElementById('mBuyer').value = '';
+  document.getElementById('mHint').textContent = '库存：' + stock;
+  document.getElementById('mHint').className = 'hint';
+  document.getElementById('orderForm').style.display = '';
+  document.getElementById('successMsg').style.display = '';
+  document.getElementById('orderModal').classList.add('show');
 }
 
-function initOrderPage() {
-  var sel = document.getElementById('orderServer');
-  if (sel.options.length > 1) return;
-  rawData.forEach(function(s){
-    var opt = document.createElement('option');
-    opt.value = s.server;
-    opt.textContent = s.server;
-    sel.appendChild(opt);
-  });
+function closeModal() {
+  document.getElementById('orderModal').classList.remove('show');
 }
 
-function onOrderServerChange() {
-  var svName = document.getElementById('orderServer').value;
-  var itemSel = document.getElementById('orderItem');
-  itemSel.innerHTML = '<option value="">-- 选择物品 --</option>';
-  document.getElementById('orderHint').textContent = '库存：--';
-  if (!svName) return;
-  var sv = rawData.find(function(s){ return s.server === svName; });
-  if (!sv) return;
-  var seen = {};
-  sv.items.forEach(function(cat){
-    cat.list.forEach(function(item){
-      if (seen[item.n]) return;
-      seen[item.n] = true;
-      var opt = document.createElement('option');
-      opt.value = item.n;
-      opt.textContent = item.n + '（库存:' + item.q + '）';
-      opt.dataset.qty = item.q;
-      itemSel.appendChild(opt);
-    });
-  });
-}
-
-function onOrderItemChange() {
-  var svName = document.getElementById('orderServer').value;
-  var itemName = document.getElementById('orderItem').value;
-  var hint = document.getElementById('orderHint');
-  if (!svName || !itemName) {
-    hint.textContent = '库存：--';
-    hint.className = 'hint';
-    return;
-  }
-  var qty = getInventoryQty(svName, itemName);
-  hint.textContent = '库存：' + qty + '　当前输入：' + (document.getElementById('orderQty').value || 0);
-  hint.className = 'hint';
-}
-
-function onOrderQtyChange() {
-  var svName = document.getElementById('orderServer').value;
-  var itemName = document.getElementById('orderItem').value;
-  var hint = document.getElementById('orderHint');
-  if (!svName || !itemName) return;
-  var qty = getInventoryQty(svName, itemName);
-  var inputQty = parseInt(document.getElementById('orderQty').value) || 0;
-  hint.textContent = '库存：' + qty + '　当前输入：' + inputQty;
-  if (inputQty > qty) {
+function checkQty() {
+  const qty = parseInt(document.getElementById('mQty').value) || 0;
+  const hint = document.getElementById('mHint');
+  hint.textContent = '库存：' + orderStock + '　购买：' + qty;
+  if (qty > orderStock) {
     hint.textContent += '　⚠ 超出库存！';
     hint.className = 'hint error';
-  } else if (inputQty > 0) {
+  } else if (qty > 0) {
     hint.className = 'hint ok';
   } else {
     hint.className = 'hint';
   }
 }
 
-function addOrder() {
-  var svName = document.getElementById('orderServer').value;
-  var buyer = document.getElementById('orderBuyer').value.trim();
-  var itemName = document.getElementById('orderItem').value;
-  var qty = parseInt(document.getElementById('orderQty').value) || 0;
-  var platform = document.getElementById('orderPlatform').value;
-  if (!svName) { alert('请选择区服'); return; }
-  if (!buyer) { alert('请输入收货玩家名'); return; }
-  if (!itemName) { alert('请选择物品名称'); return; }
-  if (qty <= 0) { alert('数量必须大于0'); return; }
-  var stock = getInventoryQty(svName, itemName);
-  if (qty > stock) { alert('购买数量（' + qty + '）超出库存（' + stock + '）！'); return; }
-  orders.push({ server: svName, buyer: buyer, item: itemName, qty: qty, platform: platform });
-  renderOrders();
-  document.getElementById('orderItem').value = '';
-  document.getElementById('orderQty').value = 1;
-  document.getElementById('orderHint').textContent = '库存：--';
-}
+function submitOrder() {
+  const buyer = document.getElementById('mBuyer').value.trim();
+  const qty = parseInt(document.getElementById('mQty').value) || 0;
+  if (!buyer) { showToast('请输入收货玩家名', 'error'); return; }
+  if (qty <= 0) { showToast('数量必须大于0', 'error'); return; }
+  if (qty > orderStock) { showToast('超出库存！', 'error'); return; }
 
-function renderOrders() {
-  var tbody = document.getElementById('orderTbody');
-  var empty = document.getElementById('orderEmpty');
-  if (orders.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = '';
-    return;
+  try {
+    const order = {
+      server: orderServer,
+      buyer: buyer,
+      item: orderItem,
+      category: orderCategory,
+      qty: qty,
+      platform: '天使黄金'
+    };
+    
+    console.log('[Index] 准备下单:', order);
+    Storage.addOrder(order);
+    console.log('[Index] 下单成功！');
+    
+    document.getElementById('orderForm').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'block';
+    
+    // 刷新库存显示
+    setTimeout(() => { 
+      closeModal(); 
+      loadInventory(); // 重新渲染以显示更新后的库存
+    }, 1500);
+  } catch(e) {
+    console.error('[Index] 下单失败:', e);
+    showToast('下单失败：' + e.message, 'error');
   }
-  empty.style.display = 'none';
-  var html = '';
-  orders.forEach(function(o, i){
-    html += '<tr>';
-    html += '<td>' + (i+1) + '</td>';
-    html += '<td>' + escapeHtml(o.server) + '</td>';
-    html += '<td>' + escapeHtml(o.buyer) + '</td>';
-    html += '<td>' + escapeHtml(o.item) + '</td>';
-    html += '<td>' + o.qty + '</td>';
-    html += '<td>' + escapeHtml(o.platform) + '</td>';
-    html += '<td class="td-del" onclick="removeOrder(' + i + ')" title="删除">✕</td>';
-    html += '</tr>';
+}
+
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, 3000);
+}
+
+// 手动触发同步
+function manualSync() {
+  console.log('[Manual Sync] 手动触发同步...');
+  showToast('正在同步数据...', 'info');
+  syncFromCloud().then(success => {
+    if (success) {
+      showToast('同步成功！', 'success');
+      // 重新渲染页面以显示最新数据
+      setTimeout(() => {
+        loadInventory();
+      }, 1000);
+    } else {
+      showToast('同步失败，请查看控制台', 'error');
+    }
   });
-  tbody.innerHTML = html;
 }
 
-function removeOrder(idx) {
-  orders.splice(idx, 1);
-  renderOrders();
-}
-
-function clearOrders() {
-  if (orders.length === 0) return;
-  if (!confirm('确定清空所有订单？')) return;
-  orders = [];
-  renderOrders();
-}
-
-function escapeHtml(str) {
-  var div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-
-// 物品名称 → 物品ID 对照表（导出时使用）
-var ITEM_ID_MAP = {
-  "仙草皇礼包": "100332",
-  "至宝仙草礼包": "100315",
-  "海神神装宝箱": "100339",
-  "昊天令礼包": "100343",
-  "深海沉银": "102292",
-  "蓝银之种": "108008",
-  "唐门淬火石宝箱": "6200005",
-  "冰火之泉": "108006",
-  "雪茄选择宝箱1": "1036971",
-  "雪茄选择宝箱2": "1038569",
-  "雪茄选择宝箱3": "1038670",
-  "雪茄选择宝箱4": "1038771",
-  "雪茄选择宝箱5": "1038720",
-  "雪茄选择宝箱（2605）": "1056271"
-};
-function lookupItemId(name) {
-  return ITEM_ID_MAP[name] || name;
-}
-function exportOrders() {
-  if (orders.length === 0) { alert('暂无订单可导出'); return; }
-  // 表头（独立列）
-  var headers = [['区服', '收货玩家', '物品ID', '物品数量', '平台版本']];
-  // 数据行
-  var rows = orders.map(function(o){
-    return [o.server, o.buyer, lookupItemId(o.item), o.qty, o.platform];
+// 初始化
+loadInventory();
+setTimeout(() => {
+  document.querySelectorAll('.server-card:not(.hidden)').forEach((card, i) => {
+    if (i < 3) card.classList.add('open');
   });
-  var allRows = headers.concat(rows);
-  // 生成 .xlsx
-  var ws = XLSX.utils.aoa_to_sheet(allRows);
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '订单记录');
-  XLSX.writeFile(wb, '订单记录_' + new Date().toISOString().slice(0,10) + '.xlsx');
-}
-window.onerror = function(msg, url, line, col, err) {
-  document.body.innerHTML = '<div style="color:red;padding:20px;font-size:18px;white-space:pre-wrap;">JS Error: ' + msg + '\nLine: ' + line + ':' + col + '\n' + (err?.stack || '') + '</div>' + document.body.innerHTML;
-};
-try { render(); switchTab('stock'); } catch(e) {
-  document.body.innerHTML = '<div style="color:red;padding:20px;font-size:18px;">Render Error: ' + e.message + '</div>';
-}
+}, 500);
 </script>
 </body>
 </html>

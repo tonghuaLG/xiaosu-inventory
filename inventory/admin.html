@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小酥后台管理 · 斗罗大陆H5</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+/* ===== 全局样式 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Microsoft YaHei', 'Noto Sans SC', 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0a0f1e 0%, #1a2d5a 50%, #0d1b36 100%);
+  color: #e0d6c2;
+  min-height: 100vh;
+  display: flex;
+  overflow-x: hidden;
+}
+
+/* 背景装饰 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 20% 50%, rgba(240, 192, 64, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(123, 45, 142, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0a0f1e; }
+::-webkit-scrollbar-thumb { 
+  background: linear-gradient(180deg, #f0c040, #7b2d8e); 
+  border-radius: 3px; 
+}
+
+/* ===== 登录页 ===== */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.login-box {
+  max-width: 400px;
+  width: 90%;
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.8), rgba(13, 27, 54, 0.9));
+  border: 2px solid rgba(240, 192, 64, 0.35);
+  border-radius: 20px;
+  padding: 40px 36px;
+  text-align: center;
+  box-shadow: 0 0 50px rgba(240, 192, 64, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 魂环装饰 */
+.login-box::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  left: -50px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 192, 64, 0.2) 0%, transparent 70%);
+  border: 2px solid rgba(240, 192, 64, 0.3);
+  animation: soulRingFloat 6s ease-in-out infinite;
+}
+
+.login-box::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  right: -40px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(123, 45, 142, 0.2) 0%, transparent 70%);
+  border: 2px solid rgba(123, 45, 142, 0.3);
+  animation: soulRingFloat 8s ease-in-out infinite reverse;
+}
+
+@keyframes soulRingFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(10px, -10px) scale(1.1); }
+}
+
+.login-box h2 {
+  color: #f0c040;
+  font-size: 24px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 20px rgba(240, 192, 64, 0.5);
+  letter-spacing: 3px;
+}
+
+.login-subtitle {
+  color: rgba(240, 192, 64, 0.5);
+  font-size: 12px;
+  margin-bottom: 30px;
+  letter-spacing: 2px;
+}
+
+.login-box input {
+  width: 100%;
+  background: rgba(26, 45, 90, 0.5);
+  border: 1px solid rgba(240, 192, 64, 0.25);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #e0d6c2;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+
+.login-box input:focus {
+  border-color: #f0c040;
+  box-shadow: 0 0 15px rgba(240, 192, 64, 0.2);
+}
+
+.login-box input::placeholder {
+  color: rgba(240, 192, 64, 0.3);
+}
+
+.btn-gold {
+  padding: 12px 32px;
+  border: 2px solid rgba(240, 192, 64, 0.4);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(240, 192, 64, 0.15), rgba(123, 45, 142, 0.1));
+  color: #f0c040;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 100%;
+  letter-spacing: 2px;
+}
+
+.btn-gold:hover {
+  background: linear-gradient(135deg, rgba(240, 192, 64, 0.25), rgba(123, 45, 142, 0.15));
+  border-color: #f0c040;
+  box-shadow: 0 0 20px rgba(240, 192, 64, 0.3);
+  transform: translateY(-2px);
+}
+
+#loginError {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-top: 16px;
+  display: none;
+}
+
+/* ===== 主布局（登录后） ===== */
+.main-container {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* 左侧菜单栏 */
+.sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: linear-gradient(180deg, rgba(26, 45, 90, 0.95), rgba(13, 27, 54, 0.95));
+  border-right: 2px solid rgba(240, 192, 64, 0.25);
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid rgba(240, 192, 64, 0.15);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.sidebar-logo {
+  font-size: 18px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #f0c040, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.sidebar-sub {
+  font-size: 10px;
+  color: rgba(240, 192, 64, 0.4);
+  letter-spacing: 2px;
+}
+
+.menu-item {
+  padding: 12px 20px;
+  color: rgba(240, 192, 64, 0.6);
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  border-left: 3px solid transparent;
+}
+
+.menu-item:hover {
+  background: rgba(240, 192, 64, 0.08);
+  color: #f0c040;
+}
+
+.menu-item.active {
+  background: rgba(240, 192, 64, 0.12);
+  color: #f0c040;
+  border-left-color: #f0c040;
+  font-weight: 600;
+}
+
+.menu-icon {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 20px;
+  border-top: 1px solid rgba(240, 192, 64, 0.15);
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 107, 107, 0.08);
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: #ff6b6b;
+}
+
+/* 右侧内容区 */
+.content-area {
+  flex: 1;
+  margin-left: 200px;
+  padding: 0;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* 顶部栏 */
+.top-bar {
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.9), rgba(13, 27, 54, 0.9));
+  border-bottom: 2px solid rgba(240, 192, 64, 0.25);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  backdrop-filter: blur(16px);
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f0c040;
+  letter-spacing: 2px;
+}
+
+.top-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 按钮样式 */
+.btn {
+  padding: 8px 16px;
+  border: 1px solid rgba(240, 192, 64, 0.25);
+  border-radius: 8px;
+  background: rgba(240, 192, 64, 0.08);
+  color: #f0c040;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn:hover {
+  background: rgba(240, 192, 64, 0.15);
+  border-color: #f0c040;
+  box-shadow: 0 0 12px rgba(240, 192, 64, 0.2);
+}
+
+.btn.danger {
+  border-color: rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.08);
+}
+
+.btn.danger:hover {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
+}
+
+.btn.success {
+  border-color: rgba(81, 207, 102, 0.3);
+  color: #51cf66;
+  background: rgba(81, 207, 102, 0.08);
+}
+
+.btn.success:hover {
+  border-color: #51cf66;
+  background: rgba(81, 207, 102, 0.15);
+}
+
+.btn.warning {
+  border-color: rgba(240, 192, 64, 0.3);
+  color: #f0c040;
+  background: rgba(240, 192, 64, 0.08);
+}
+
+.btn.primary {
+  border-color: rgba(240, 192, 64, 0.3);
+  color: #f0c040;
+  background: rgba(240, 192, 64, 0.12);
+}
+
+/* 内容卡片 */
+.content-card {
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.3), rgba(13, 27, 54, 0.3));
+  border: 1px solid rgba(240, 192, 64, 0.15);
+  border-radius: 14px;
+  padding: 24px;
+  margin: 20px 24px;
+}
+
+/* 统计卡片 */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat {
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.35), rgba(13, 27, 54, 0.35));
+  border: 1px solid rgba(240, 192, 64, 0.18);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.stat:hover {
+  border-color: rgba(240, 192, 64, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(240, 192, 64, 0.12);
+}
+
+.stat .num {
+  font-size: 28px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #f0c040, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat .label {
+  font-size: 11px;
+  color: rgba(240, 192, 64, 0.5);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+.stat.pending .num {
+  background: linear-gradient(135deg, #ff6b6b, #ffa502);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.stat.shipped .num {
+  background: linear-gradient(135deg, #51cf66, #f0c040);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* 工具栏 */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.toolbar select,
+.toolbar input {
+  background: rgba(26, 45, 90, 0.5);
+  border: 1px solid rgba(240, 192, 64, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e0d6c2;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.toolbar select:focus,
+.toolbar input:focus {
+  border-color: #f0c040;
+  box-shadow: 0 0 10px rgba(240, 192, 64, 0.15);
+}
+
+.toolbar select option {
+  background: #1a2d5a;
+  color: #e0d6c2;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+/* 订单表 */
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: rgba(26, 45, 90, 0.2);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.order-table th {
+  text-align: left;
+  padding: 12px 10px;
+  color: rgba(240, 192, 64, 0.6);
+  font-size: 11px;
+  letter-spacing: 1px;
+  border-bottom: 2px solid rgba(240, 192, 64, 0.2);
+  background: rgba(26, 45, 90, 0.4);
+}
+
+.order-table td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(240, 192, 64, 0.08);
+  color: #e0d6c2;
+}
+
+.order-table tr:hover td {
+  background: rgba(240, 192, 64, 0.05);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-pending {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.25);
+}
+
+.status-shipped {
+  background: rgba(81, 207, 102, 0.12);
+  color: #51cf66;
+  border: 1px solid rgba(81, 207, 102, 0.25);
+}
+
+.status-cancelled {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.25);
+}
+
+.empty-msg {
+  text-align: center;
+  padding: 40px;
+  color: rgba(240, 192, 64, 0.2);
+  font-style: italic;
+}
+
+.time-ago {
+  font-size: 11px;
+  color: rgba(240, 192, 64, 0.35);
+}
+
+/* 补货表单 */
+.restock-form {
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.3), rgba(13, 27, 54, 0.3));
+  border: 1px solid rgba(240, 192, 64, 0.18);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 600px;
+  margin-bottom: 24px;
+}
+
+.restock-form .row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.restock-form label {
+  min-width: 80px;
+  color: rgba(240, 192, 64, 0.6);
+  font-size: 13px;
+}
+
+.restock-form select,
+.restock-form input {
+  flex: 1;
+  background: rgba(26, 45, 90, 0.5);
+  border: 1px solid rgba(240, 192, 64, 0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #e0d6c2;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.restock-form select:focus,
+.restock-form input:focus {
+  border-color: #f0c040;
+  box-shadow: 0 0 10px rgba(240, 192, 64, 0.15);
+}
+
+.restock-form select option {
+  background: #1a2d5a;
+  color: #e0d6c2;
+}
+
+.restock-form .hint {
+  font-size: 12px;
+  color: rgba(240, 192, 64, 0.4);
+  margin-top: 4px;
+}
+
+.restock-form .current-stock {
+  font-size: 14px;
+  color: #51cf66;
+  font-weight: 600;
+}
+
+/* 批量导入 */
+.batch-import {
+  background: linear-gradient(135deg, rgba(26, 45, 90, 0.3), rgba(13, 27, 54, 0.3));
+  border: 1px solid rgba(240, 192, 64, 0.18);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 800px;
+}
+
+.batch-import .format-hint {
+  background: rgba(26, 45, 90, 0.4);
+  border: 1px solid rgba(240, 192, 64, 0.15);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  color: rgba(240, 192, 64, 0.6);
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+
+.batch-import textarea {
+  width: 100%;
+  height: 200px;
+  background: rgba(26, 45, 90, 0.4);
+  border: 1px solid rgba(240, 192, 64, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  color: #e0d6c2;
+  font-size: 13px;
+  outline: none;
+  font-family: 'Courier New', monospace;
+  resize: vertical;
+  transition: all 0.3s;
+}
+
+.batch-import textarea:focus {
+  border-color: #f0c040;
+  box-shadow: 0 0 10px rgba(240, 192, 64, 0.15);
+}
+
+.batch-import .result-box {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: none;
+}
+
+.batch-import .result-box.success {
+  background: rgba(81, 207, 102, 0.08);
+  border: 1px solid rgba(81, 207, 102, 0.25);
+  color: #51cf66;
+}
+
+.batch-import .result-box.error {
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  color: #ff6b6b;
+}
+
+/* 导入导出按钮栏 */
+.import-export-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* ===== 响应式设计 ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 60px;
+    min-width: 60px;
+  }
+  
+  .sidebar-header {
+    padding: 10px;
+  }
+  
+  .sidebar-logo,
+  .sidebar-sub,
+  .menu-text {
+    display: none;
+  }
+  
+  .menu-item {
+    justify-content: center;
+    padding: 12px;
+  }
+  
+  .menu-icon {
+    width: auto;
+  }
+  
+  .content-area {
+    margin-left: 60px;
+  }
+  
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .toolbar {
+    flex-direction: column;
+  }
+  
+  .order-table {
+    font-size: 11px;
+  }
+  
+  .order-table th,
+  .order-table td {
+    padding: 6px 4px;
+  }
+}
+</style>
+</head>
+<body>
+<!-- 同步状态指示器 -->
+<div id="sync-status" style="display:none;"></div>
+
+<!-- 登录页 -->
+<div class="login-container" id="loginPage">
+  <div class="login-box">
+    <h2>🔐 小酥后台管理</h2>
+    <div class="login-subtitle">斗罗大陆 H5 · 库存管理系统</div>
+    <input type="password" id="passInput" placeholder="请输入管理密码" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-gold" onclick="doLogin()">登 录</button>
+    <div id="loginError">密码错误，请重试</div>
+  </div>
+</div>
+
+<!-- 主界面（登录后显示） -->
+<div class="main-container" id="mainPage">
+  <!-- 左侧菜单栏 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🔐 小酥后台</div>
+      <div class="sidebar-sub">管理面板</div>
+    </div>
+    
+    <div class="menu-item active" data-page="orders" onclick="switchMenu('orders')">
+      <span class="menu-icon">📦</span>
+      <span class="menu-text">订单管理</span>
+    </div>
+    
+    <div class="menu-item" data-page="restock" onclick="switchMenu('restock')">
+      <span class="menu-icon">📥</span>
+      <span class="menu-text">补货管理</span>
+    </div>
+    
+    <div class="menu-item" data-page="import-export" onclick="switchMenu('import-export')">
+      <span class="menu-icon">📤</span>
+      <span class="menu-text">导入/导出</span>
+    </div>
+    
+    <div class="sidebar-footer">
+      <div style="color: #51cf66; font-size: 11px; margin-bottom: 10px; text-align: center;">✅ 已登录</div>
+      <button class="logout-btn" onclick="doLogout()">
+        <span>🚪</span>
+        <span>退出登录</span>
+      </button>
+    </div>
+  </div>
+  
+  <!-- 右侧内容区 -->
+  <div class="content-area">
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+      <div class="page-title" id="pageTitle">📦 订单管理</div>
+      <div class="top-actions" id="topActions"></div>
+    </div>
+    
+    <!-- 页面内容 -->
+    <div id="pageContent"></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="storage.js"></script>
+<script>
+let isLoggedIn = false;
+let currentPage = 'orders';
+
+const ITEM_ID_MAP = {
+  "仙草皇礼包": "100332", "至宝仙草礼包": "100315", "海神神装宝箱": "100339",
+  "昊天令礼包": "100343", "深海沉银": "102292", "蓝银之种": "108008",
+  "唐门淬火石宝箱": "6200005", "冰火之泉": "108006",
+  "雪茄选择宝箱1": "1036971", "雪茄选择宝箱2": "1038569", "雪茄选择宝箱3": "1038670",
+  "雪茄选择宝箱4": "1038771", "雪茄选择宝箱5": "1038720", "雪茄选择宝箱（2605）": "1056271"
+};
+
+function lookupItemId(name) { return ITEM_ID_MAP[name] || name; }
+
+function timeAgo(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return Math.floor(diff/60) + '分钟前';
+  if (diff < 86400) return Math.floor(diff/3600) + '小时前';
+  return Math.floor(diff/86400) + '天前';
+}
+
+// ===== 登录 =====
+function doLogin() {
+  const pass = document.getElementById('passInput').value;
+  if (!pass) { 
+    showLoginError('请输入密码'); 
+    return; 
+  }
+  
+  if (Storage.verifyPassword(pass)) {
+    isLoggedIn = true;
+    showMainPage();
+  } else {
+    showLoginError('密码错误，请重试');
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+function showMainPage() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('mainPage').style.display = 'flex';
+  
+  // 【关键】初始化 Firebase 云同步（异步，不阻塞UI）
+  Storage.initCloudSync().then(() => {
+    // 应用 Firebase 中的库存修改记录
+    Storage.applyInventoryMods();
+    
+    // 加载默认页面
+    switchMenu('orders');
+  });
+}
+
+function doLogout() {
+  if (!confirm('确定退出登录？')) return;
+  isLoggedIn = false;
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('mainPage').style.display = 'none';
+  document.getElementById('passInput').value = '';
+}
+
+// ===== 菜单切换 =====
+function switchMenu(page) {
+  currentPage = page;
+  
+  // 更新菜单高亮
+  document.querySelectorAll('.menu-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.page === page) {
+      item.classList.add('active');
+    }
+  });
+  
+  // 更新页面标题和 content
+  const titles = {
+    'orders': '📦 订单管理',
+    'restock': '📥 补货管理',
+    'import-export': '📤 导入/导出'
+  };
+  
+  document.getElementById('pageTitle').textContent = titles[page] || '未知页面';
+  
+  // 加载对应页面内容
+  if (page === 'orders') loadOrdersPage();
+  if (page === 'restock') loadRestockPage();
+  if (page === 'import-export') loadImportExportPage();
+}
+
+// ===== 订单管理页面 =====
+function loadOrdersPage() {
+  console.log('[Admin] 加载订单页面...');
+  const orders = Storage.getOrders();
+  console.log('[Admin] 获取到订单数量:', orders.length);
+  renderOrdersPage(orders);
+}
+
+function renderOrdersPage(orders) {
+  const pending = orders.filter(o => o.status === 'pending');
+  const shipped = orders.filter(o => o.status === 'shipped');
+  const cancelled = orders.filter(o => o.status === 'cancelled');
+
+  // 检查是否有新订单（与上次加载对比）
+  const previousCount = parseInt(localStorage.getItem('xiaosu_admin_last_order_count') || '0');
+  if (previousCount > 0 && orders.length > previousCount) {
+    showOrderNotification(orders.length - previousCount);
+  }
+  localStorage.setItem('xiaosu_admin_last_order_count', orders.length.toString());
+
+  // 顶部操作栏
+  document.getElementById('topActions').innerHTML = `
+    <button class="btn" onclick="loadOrdersPage()" style="padding:6px 14px;font-size:12px;">🔄 刷新</button>
+    <span style="font-size:12px;color:rgba(240,192,64,0.5);" id="lastRefreshTime"></span>
+  `;
+  
+  // 更新刷新时间
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const timeEl = document.getElementById('lastRefreshTime');
+  if (timeEl) timeEl.textContent = `最后刷新: ${timeStr}`;
+
+  let html = `
+    <div class="content-card">
+      <div class="stats">
+        <div class="stat"><div class="num">${orders.length}</div><div class="label">总订单</div></div>
+        <div class="stat pending"><div class="num">${pending.length}</div><div class="label">待发货</div></div>
+        <div class="stat shipped"><div class="num">${shipped.length}</div><div class="label">已发货</div></div>
+        <div class="stat"><div class="num">${cancelled.length}</div><div class="label">已取消</div></div>
+      </div>
+      
+      <div class="toolbar">
+        <select id="filterStatus" onchange="filterOrders()">
+          <option value="all">全部状态</option>
+          <option value="pending" selected>待发货</option>
+          <option value="shipped">已发货</option>
+          <option value="cancelled">已取消</option>
+        </select>
+        <input type="text" id="filterSearch" placeholder="搜索玩家/物品..." oninput="filterOrders()" style="width:200px;">
+        <div class="spacer"></div>
+      </div>
+      
+      <table class="order-table">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>区服</th>
+            <th>收货玩家</th>
+            <th>物品</th>
+            <th>数量</th>
+            <th>平台</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="orderTbody"></tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('pageContent').innerHTML = html;
+  renderOrderRows(orders);
+}
+
+function renderOrderRows(orders) {
+  const filter = document.getElementById('filterStatus')?.value || 'all';
+  const search = document.getElementById('filterSearch')?.value?.toLowerCase() || '';
+
+  let filtered = orders;
+  if (filter !== 'all') filtered = filtered.filter(o => o.status === filter);
+  if (search) filtered = filtered.filter(o =>
+    o.buyer.toLowerCase().includes(search) ||
+    o.item.toLowerCase().includes(search) ||
+    o.server.toLowerCase().includes(search)
+  );
+
+  if (filtered.length === 0) {
+    document.getElementById('orderTbody').innerHTML = `<tr><td colspan="8" class="empty-msg">暂无订单</td></tr>`;
+    return;
+  }
+
+  document.getElementById('orderTbody').innerHTML = filtered.map(o => `
+    <tr>
+      <td>
+        <div>${new Date(o.createdAt).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+        <div class="time-ago">${timeAgo(o.createdAt)}</div>
+      </td>
+      <td>${esc(o.server)}</td>
+      <td style="color:#f0c040;font-weight:600;">${esc(o.buyer)}</td>
+      <td>${esc(o.item)}</td>
+      <td style="font-weight:700;">${o.qty}</td>
+      <td style="font-size:12px;color:rgba(240,192,64,0.5);">${esc(o.platform)}</td>
+      <td><span class="status-badge status-${o.status}">${o.status==='pending'?'⏳待发货':o.status==='shipped'?'✅已发货':'❌已取消'}</span></td>
+      <td>
+        ${o.status==='pending'?`<button class="btn success" onclick="updateStatus('${o.id}','shipped')" style="padding:4px 10px;font-size:11px;">发货</button> <button class="btn danger" onclick="updateStatus('${o.id}','cancelled')" style="padding:4px 10px;font-size:11px;">取消</button>`:''}
+        ${o.status==='shipped'?`<button class="btn warning" onclick="updateStatus('${o.id}','pending')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
+        ${o.status==='cancelled'?`<button class="btn" onclick="updateStatus('${o.id}','pending')" style="padding:4px 10px;font-size:11px;">恢复</button>`:''}
+        <button class="btn danger" onclick="deleteOrder('${o.id}')" style="padding:4px 10px;font-size:11px;">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function esc(s) { 
+  const d = document.createElement('div'); 
+  d.textContent = s; 
+  return d.innerHTML; 
+}
+
+function updateStatus(id, status) {
+  Storage.updateOrder(id, { status });
+  loadOrdersPage();
+}
+
+function deleteOrder(id) {
+  if (!confirm('确定删除此订单？')) return;
+  Storage.deleteOrder(id);
+  loadOrdersPage();
+}
+
+function filterOrders() {
+  const orders = Storage.getOrders();
+  renderOrderRows(orders);
+}
+
+// ===== 补货管理页面 =====
+function loadRestockPage() {
+  document.getElementById('topActions').innerHTML = '';
+  
+  let html = `
+    <div class="content-card">
+      <h3 style="color:#f0c040;margin-bottom:20px;font-size:16px;">📥 单个补货</h3>
+      <div class="restock-form" style="margin-bottom:30px;">
+        <div class="row">
+          <label>区服</label>
+          <select id="restockServer" onchange="onRestockServerChange()">
+            <option value="">请选择区服</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>物品</label>
+          <select id="restockItem" onchange="onRestockItemChange()">
+            <option value="">请先选择区服</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>当前库存</label>
+          <div class="current-stock" id="restockCurrent">--</div>
+        </div>
+        <div class="row">
+          <label>补货数量</label>
+          <input type="number" id="restockQty" min="1" value="1" placeholder="输入要增加的数量">
+        </div>
+        <div class="hint">补货后库存 = 当前库存 + 补货数量</div>
+        <div style="margin-top:20px;">
+          <button class="btn success" onclick="doRestock()" style="padding:10px 32px;font-size:15px;">✅ 确认补货</button>
+        </div>
+        <div id="restockMsg" style="margin-top:12px;font-size:13px;"></div>
+      </div>
+    </div>
+    
+    <div class="content-card">
+      <h3 style="color:#f0c040;margin-bottom:16px;font-size:16px;">📦 批量导入补货数据</h3>
+      <div class="batch-import">
+        <div class="format-hint">
+          <div style="color:#f0c040;margin-bottom:8px;">📝 数据格式（每行一条，逗号分隔）：</div>
+          <div>区服名称, 物品名称, 补货数量</div>
+          <div style="margin-top:8px;color:rgba(240,192,64,0.5);">示例：</div>
+          <div style="font-family:'Courier New',monospace;margin-top:4px;">
+            集结·天使1服, 仙草皇礼包, 10<br>
+            集结·天使1服, 至宝仙草礼包, 5<br>
+            天使黄金1服, 海神神装宝箱, 3
+          </div>
+          <div style="margin-top:8px;color:rgba(240,192,64,0.5);">💡 支持一次性导入多条，系统会自动逐条校验并补货</div>
+        </div>
+        <textarea id="batchInput" placeholder="请粘贴补货数据，格式：区服,物品,数量（每行一条）"></textarea>
+        <div style="margin-top:16px;display:flex;gap:12px;align-items:center;">
+          <button class="btn success" onclick="doBatchRestock()" style="padding:10px 32px;font-size:15px;">📦 批量补货</button>
+          <button class="btn" onclick="document.getElementById('batchInput').value='';document.getElementById('batchResult').style.display='none';" style="padding:10px 24px;font-size:14px;">清空</button>
+        </div>
+        <div id="batchResult" class="result-box"></div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('pageContent').innerHTML = html;
+  initRestockForm();
+}
+
+function initRestockForm() {
+  const sel = document.getElementById('restockServer');
+  if (!sel) return;
+  
+  sel.innerHTML = '<option value="">请选择区服</option>';
+  
+  if (typeof rawData === 'undefined') {
+    alert('库存数据未加载');
+    return;
+  }
+  
+  rawData.forEach(sv => {
+    const opt = document.createElement('option');
+    opt.value = sv.server;
+    opt.textContent = sv.server;
+    sel.appendChild(opt);
+  });
+  
+  const itemSel = document.getElementById('restockItem');
+  if (itemSel) itemSel.innerHTML = '<option value="">请先选择区服</option>';
+  const currentStock = document.getElementById('restockCurrent');
+  if (currentStock) currentStock.textContent = '--';
+  const msg = document.getElementById('restockMsg');
+  if (msg) msg.textContent = '';
+  const batchInput = document.getElementById('batchInput');
+  if (batchInput) batchInput.value = '';
+  const batchResult = document.getElementById('batchResult');
+  if (batchResult) batchResult.style.display = 'none';
+}
+
+function onRestockServerChange() {
+  const server = document.getElementById('restockServer').value;
+  const itemSel = document.getElementById('restockItem');
+  if (!itemSel) return;
+  
+  itemSel.innerHTML = '<option value="">请选择物品</option>';
+  const currentStock = document.getElementById('restockCurrent');
+  if (currentStock) currentStock.textContent = '--';
+  
+  if (!server) return;
+  
+  const sv = rawData.find(s => s.server === server);
+  if (!sv) return;
+  
+  sv.items.forEach(cat => {
+    cat.list.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.n;
+      opt.textContent = `${item.n}（当前:${item.q}）`;
+      opt.dataset.qty = item.q;
+      itemSel.appendChild(opt);
+    });
+  });
+}
+
+function onRestockItemChange() {
+  const itemSel = document.getElementById('restockItem');
+  if (!itemSel) return;
+  const opt = itemSel.selectedOptions[0];
+  const currentStock = document.getElementById('restockCurrent');
+  if (currentStock) currentStock.textContent = opt && opt.dataset.qty ? opt.dataset.qty : '--';
+}
+
+function doRestock() {
+  const server = document.getElementById('restockServer').value;
+  const item = document.getElementById('restockItem').value;
+  const qty = parseInt(document.getElementById('restockQty').value);
+  const msg = document.getElementById('restockMsg');
+
+  if (!server || !item || !qty || qty <= 0) {
+    if (msg) {
+      msg.style.color = '#ff6b6b';
+      msg.textContent = '❌ 请完整填写区服、物品和数量';
+    }
+    return;
+  }
+
+  try {
+    const oldQty = rawData.find(s => s.server === server)
+      .items.flatMap(c => c.list)
+      .find(i => i.n === item)?.q || 0;
+    
+    const success = Storage.restock(server, item, qty);
+    
+    if (success) {
+      const newQty = rawData.find(s => s.server === server)
+        .items.flatMap(c => c.list)
+        .find(i => i.n === item)?.q || 0;
+      
+      if (msg) {
+        msg.style.color = '#51cf66';
+        msg.textContent = `✅ 补货成功！${server} 的「${item}」库存: ${oldQty} → ${newQty}`;
+      }
+      
+      onRestockServerChange();
+      const currentStock = document.getElementById('restockCurrent');
+      if (currentStock) currentStock.textContent = newQty;
+    } else {
+      if (msg) {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = '❌ 补货失败：物品未找到';
+      }
+    }
+  } catch(e) {
+    if (msg) {
+      msg.style.color = '#ff6b6b';
+      msg.textContent = '❌ ' + e.message;
+    }
+  }
+}
+
+function doBatchRestock() {
+  const input = document.getElementById('batchInput').value.trim();
+  const resultBox = document.getElementById('batchResult');
+  
+  if (!input) {
+    if (resultBox) {
+      resultBox.className = 'result-box error';
+      resultBox.innerHTML = '❌ 请先粘贴补货数据';
+      resultBox.style.display = 'block';
+    }
+    return;
+  }
+
+  const lines = input.split('\n').filter(l => l.trim());
+  const items = [];
+  const parseErrors = [];
+
+  lines.forEach((line, idx) => {
+    const parts = line.split(',').map(s => s.trim());
+    if (parts.length < 3) {
+      parseErrors.push(`第${idx+1}行格式错误: ${line}`);
+      return;
+    }
+    const qty = parseInt(parts[2]);
+    if (isNaN(qty) || qty <= 0) {
+      parseErrors.push(`第${idx+1}行数量错误: ${parts[2]}`);
+      return;
+    }
+    items.push({ server: parts[0], item: parts[1], qty });
+  });
+
+  if (parseErrors.length > 0) {
+    if (resultBox) {
+      resultBox.className = 'result-box error';
+      resultBox.innerHTML = `❌ 数据解析失败:<br>${parseErrors.map(e => `• ${e}`).join('<br>')}`;
+      resultBox.style.display = 'block';
+    }
+    return;
+  }
+
+  try {
+    const result = Storage.batchRestock(items);
+    
+    let html = `✅ 批量补货完成！成功 ${result.success} 条，失败 ${result.failed} 条<br><br>`;
+    result.details.forEach(d => {
+      if (d.error) {
+        html += `<span style="color:#ff6b6b;">❌ ${d.server} / ${d.item}: ${d.error}</span><br>`;
+      } else {
+        html += `<span style="color:#51cf66;">✅ ${d.server} / ${d.item}: +${d.qty} → ${d.newQty}</span><br>`;
+      }
+    });
+    
+    if (resultBox) {
+      resultBox.className = `result-box ${result.failed === 0 ? 'success' : 'error'}`;
+      resultBox.innerHTML = html;
+      resultBox.style.display = 'block';
+    }
+  } catch(e) {
+    if (resultBox) {
+      resultBox.className = 'result-box error';
+      resultBox.innerHTML = `❌ 批量补货失败: ${e.message}`;
+      resultBox.style.display = 'block';
+    }
+  }
+}
+
+// ===== 导入/导出页面 =====
+function loadImportExportPage() {
+  document.getElementById('topActions').innerHTML = '';
+  
+  let html = `
+    <div class="content-card">
+      <h3 style="color:#f0c040;margin-bottom:20px;font-size:16px;">📤 数据导入/导出</h3>
+      
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:30px;">
+        <button class="btn success" onclick="Storage.exportOrders()" style="padding:12px 24px;font-size:14px;">
+          📤 导出订单 (JSON)
+        </button>
+        
+        <button class="btn primary" onclick="importOrders()" style="padding:12px 24px;font-size:14px;">
+          📥 导入订单 (JSON)
+        </button>
+        
+        <button class="btn warning" onclick="exportExcel()" style="padding:12px 24px;font-size:14px;">
+          📊 导出Excel
+        </button>
+      </div>
+      
+      <div style="background:rgba(26,45,90,0.3);border:1px solid rgba(240,192,64,0.15);border-radius:10px;padding:16px;">
+        <div style="color:rgba(240,192,64,0.6);font-size:12px;margin-bottom:10px;">📝 操作说明：</div>
+        <div style="color:rgba(240,192,64,0.4);font-size:12px;line-height:1.8;">
+          • <strong>导出订单</strong>：将订单数据保存为 JSON 文件，用于备份或迁移<br>
+          • <strong>导入订单</strong>：从 JSON 文件恢复订单数据<br>
+          • <strong>导出Excel</strong>：导出为 Excel 格式，方便打印或发送给他人
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('pageContent').innerHTML = html;
+}
+
+function importOrders() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      const count = await Storage.importOrders(file);
+      alert(`✅ 成功导入 ${count} 条订单`);
+    } catch (err) {
+      alert('❌ 导入失败：' + err.message);
+    }
+  };
+  input.click();
+}
+
+function exportExcel() {
+  const orders = Storage.getOrders();
+  if (orders.length === 0) { alert('暂无订单'); return; }
+  
+  const headers = [['区服', '收货玩家', '物品ID', '物品数量', '平台版本']];
+  const rows = orders.filter(o => o.status === 'pending' || o.status === 'shipped').map(o => [o.server, o.buyer, lookupItemId(o.item), o.qty, o.platform]);
+  
+  const ws = XLSX.utils.aoa_to_sheet(headers.concat(rows));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '订单记录');
+  XLSX.writeFile(wb, '小酥订单_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+// 显示新订单通知
+function showOrderNotification(newCount) {
+  const toast = document.createElement('div');
+  toast.className = 'toast info';
+  toast.innerHTML = `🔔 检测到 ${newCount} 个新订单！`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, 3000);
+}
+
+// 自动刷新（每10秒，备用）
+let refreshInterval = setInterval(() => {
+  if (isLoggedIn && currentPage === 'orders') {
+    console.log('[Admin] 自动刷新订单列表...');
+    loadOrdersPage();
+  }
+}, 10000);
+
+// 监听 Firebase 实时订单更新 → 立即刷新界面
+window.addEventListener('ordersUpdated', (e) => {
+  console.log('[Admin] 收到订单更新事件，立即刷新界面');
+  if (isLoggedIn && currentPage === 'orders') {
+    renderOrdersPage(e.detail);
+  }
+});
+
+// 监听库存修改更新
+window.addEventListener('inventoryModsUpdated', async (e) => {
+  console.log('[Admin] 收到库存修改更新，重新应用库存mod...');
+  await Storage.applyInventoryMods();
+  // 如果当前在补货管理页面，刷新显示
+  if (currentPage === 'restock') {
+    loadRestockPage();
+  }
+});
+
+// 页面获得焦点时也刷新（用户切换标签页回来时）
+window.addEventListener('focus', () => {
+  if (isLoggedIn && currentPage === 'orders') {
+    console.log('[Admin] 页面获得焦点，刷新订单列表...');
+    loadOrdersPage();
+  }
+});
+
+// 手动触发同步
+function manualSync() {
+  console.log('[Manual Sync] 手动触发同步...');
+  
+  // 显示提示
+  const toast = document.createElement('div');
+  toast.className = 'toast info';
+  toast.textContent = '正在同步数据...';
+  document.body.appendChild(toast);
+  
+  syncFromCloud().then(success => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+    
+    if (success) {
+      showOrderNotification(0); // 重用这个函数显示成功消息
+      // 重新加载当前页面数据
+      if (currentPage === 'orders') {
+        loadOrdersPage();
+      }
+    } else {
+      const errorToast = document.createElement('div');
+      errorToast.className = 'toast error';
+      errorToast.textContent = '同步失败，请查看控制台';
+      document.body.appendChild(errorToast);
+      setTimeout(() => {
+        if (errorToast.parentNode) {
+          errorToast.parentNode.removeChild(errorToast);
+        }
+      }, 3000);
+    }
+  });
+}
+</script>
+</body>
+</html>
