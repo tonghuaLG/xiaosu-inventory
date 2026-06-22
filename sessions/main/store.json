@@ -1,0 +1,25 @@
+{
+  "id": "main",
+  "name": "Render部署小酥系统",
+  "status": "active",
+  "createdAt": "2026-06-20T11:03:56.075Z",
+  "updatedAt": "2026-06-22T19:48:54.639Z",
+  "agents": [
+    {
+      "id": "agent_20xdtusa",
+      "name": "Main Agent",
+      "role": "assistant",
+      "status": "idle",
+      "createdAt": "2026-06-20T11:03:56.075Z",
+      "model": "unknown",
+      "systemPrompt": ""
+    }
+  ],
+  "summary": {
+    "id": "summary_0rtmml7w",
+    "title": "Render部署小酥系统",
+    "createdAt": "2026-06-20T11:03:56.075Z",
+    "file": "summary_0rtmml7w.md"
+  },
+  "lastMessageCount": 75
+}

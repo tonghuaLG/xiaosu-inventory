@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小酥后台管理</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: #03050f;
+  color: #c8d6e5;
+  min-height: 100vh;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(0,255,255,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(255,0,255,0.04) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #03050f; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #00ffff, #ff00ff); border-radius: 3px; }
+
+.header {
+  background: rgba(3,5,15,0.85); border-bottom: 1px solid rgba(0,255,255,0.15);
+  padding: 16px 24px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo { font-size: 20px; font-weight: 900; background: linear-gradient(135deg, #ff00ff, #ffff00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.logo-sub { font-size: 11px; color: rgba(255,0,255,0.5); margin-left: 12px; }
+
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+
+/* 登录 */
+.login-box {
+  max-width: 360px; margin: 80px auto; background: rgba(0,255,255,0.03);
+  border: 1px solid rgba(0,255,255,0.1); border-radius: 16px; padding: 32px;
+  text-align: center;
+}
+.login-box h2 { color: #00ffff; margin-bottom: 24px; }
+.login-box input {
+  width: 100%; background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px; padding: 10px 14px; color: #e0f0ff; font-size: 14px; outline: none;
+  margin-bottom: 16px;
+}
+.login-box input:focus { border-color: #ff00ff; }
+.btn {
+  padding: 10px 24px; border: 1px solid rgba(0,255,255,0.2); border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0,255,255,0.08), rgba(255,0,255,0.05));
+  color: #00ffff; font-size: 14px; cursor: pointer; transition: all .3s;
+}
+.btn:hover { border-color: #ff00ff; color: #fff; box-shadow: 0 0 16px rgba(255,0,255,0.2); }
+.btn.danger { border-color: rgba(255,68,102,0.3); color: #ff6688; }
+.btn.danger:hover { border-color: #ff4466; }
+.btn.success { border-color: rgba(68,255,136,0.3); color: #44ff88; }
+.btn.success:hover { border-color: #44ff88; }
+.btn.warning { border-color: rgba(255,255,0,0.3); color: #ffff00; }
+.btn.primary { border-color: rgba(0,255,255,0.3); color: #00ffff; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid rgba(0,255,255,0.1); padding-bottom: 0; }
+.tab-btn {
+  padding: 10px 20px; border: none; background: none; color: rgba(0,255,255,0.4);
+  font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; transition: all .3s;
+}
+.tab-btn:hover { color: #00ffff; }
+.tab-btn.active { color: #00ffff; border-bottom-color: #00ffff; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* 统计卡片 */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat {
+  background: rgba(0,255,255,0.03); border: 1px solid rgba(0,255,255,0.08);
+  border-radius: 12px; padding: 16px; text-align: center;
+}
+.stat .num { font-size: 28px; font-weight: 900; background: linear-gradient(135deg, #00ffff, #ff00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat .label { font-size: 11px; color: rgba(0,255,255,0.4); margin-top: 4px; letter-spacing: 1px; }
+.stat.pending .num { background: linear-gradient(135deg, #ff6600, #ff0066); -webkit-background-clip: text; background-clip: text; }
+.stat.shipped .num { background: linear-gradient(135deg, #44ff88, #00ffff); -webkit-background-clip: text; background-clip: text; }
+
+/* 工具栏 */
+.toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.toolbar select, .toolbar input {
+  background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px; padding: 8px 12px; color: #e0f0ff; font-size: 13px; outline: none;
+}
+.toolbar select:focus, .toolbar input:focus { border-color: #ff00ff; }
+.toolbar .spacer { flex: 1; }
+
+/* 订单表 */
+.order-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  background: rgba(0,255,255,0.02); border-radius: 14px; overflow: hidden;
+}
+.order-table th {
+  text-align: left; padding: 12px 10px; color: rgba(0,255,255,0.5);
+  font-size: 11px; letter-spacing: 1px; border-bottom: 1px solid rgba(0,255,255,0.08);
+  background: rgba(0,255,255,0.03);
+}
+.order-table td {
+  padding: 10px; border-bottom: 1px solid rgba(0,255,255,0.03);
+}
+.order-table tr:hover td { background: rgba(0,255,255,0.02); }
+.status-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600;
+}
+.status-pending { background: rgba(255,102,0,0.1); color: #ff6600; border: 1px solid rgba(255,102,0,0.2); }
+.status-shipped { background: rgba(68,255,136,0.1); color: #44ff88; border: 1px solid rgba(68,255,136,0.2); }
+.status-cancelled { background: rgba(255,68,102,0.1); color: #ff4466; border: 1px solid rgba(255,68,102,0.2); }
+.empty-msg { text-align: center; padding: 40px; color: rgba(0,255,255,0.2); font-style: italic; }
+.time-ago { font-size: 11px; color: rgba(0,255,255,0.3); }
+
+/* 补货表单 */
+.restock-form {
+  background: rgba(0,255,255,0.03); border: 1px solid rgba(0,255,255,0.1);
+  border-radius: 16px; padding: 24px; max-width: 600px; margin-bottom: 24px;
+}
+.restock-form .row { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
+.restock-form label { min-width: 80px; color: rgba(0,255,255,0.6); font-size: 13px; }
+.restock-form select, .restock-form input {
+  flex: 1; background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px; padding: 10px 14px; color: #e0f0ff; font-size: 14px; outline: none;
+}
+.restock-form select:focus, .restock-form input:focus { border-color: #ff00ff; }
+.restock-form .hint { font-size: 12px; color: rgba(0,255,255,0.3); margin-top: 4px; }
+.restock-form .current-stock { font-size: 14px; color: #44ff88; font-weight: 600; }
+
+/* 批量导入 */
+.batch-import {
+  background: rgba(0,255,255,0.03); border: 1px solid rgba(0,255,255,0.1);
+  border-radius: 16px; padding: 24px; max-width: 800px;
+}
+.batch-import .format-hint {
+  background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.1);
+  border-radius: 8px; padding: 12px; font-size: 12px; color: rgba(0,255,255,0.5);
+  margin-bottom: 16px; line-height: 1.8;
+}
+.batch-import textarea {
+  width: 100%; height: 200px; background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px; padding: 12px; color: #e0f0ff; font-size: 13px; outline: none;
+  font-family: 'Courier New', monospace; resize: vertical;
+}
+.batch-import textarea:focus { border-color: #ff00ff; }
+.batch-import .result-box {
+  margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 13px;
+  display: none;
+}
+.batch-import .result-box.success { background: rgba(68,255,136,0.05); border: 1px solid rgba(68,255,136,0.2); color: #44ff88; }
+.batch-import .result-box.error { background: rgba(255,68,102,0.05); border: 1px solid rgba(255,68,102,0.2); color: #ff4466; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;">
+    <div class="logo">🔐 小酥后台</div>
+    <span class="logo-sub">管理面板</span>
+  </div>
+  <div id="headerRight"></div>
+</div>
+
+<div class="main" id="app">
+  <div class="login-box" id="loginBox">
+    <h2>🔐 管理员登录</h2>
+    <input type="password" id="passInput" placeholder="输入管理密码" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" onclick="doLogin()" style="width:100%;">登录</button>
+  </div>
+  
+  <div id="dashboard" style="display:none;">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('orders')">📦 订单管理</button>
+      <button class="tab-btn" onclick="switchTab('restock')">📥 补货管理</button>
+    </div>
+    
+    <!-- 订单管理 Tab -->
+    <div id="tab-orders" class="tab-content active"></div>
+    
+    <!-- 补货管理 Tab -->
+    <div id="tab-restock" class="tab-content">
+      <!-- 单个补货 -->
+      <div class="restock-form">
+        <h3 style="color:#00ffff;margin-bottom:20px;">📥 单个补货</h3>
+        <div class="row">
+          <label>区服</label>
+          <select id="restockServer" onchange="onRestockServerChange()">
+            <option value="">请选择区服</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>物品</label>
+          <select id="restockItem" onchange="onRestockItemChange()">
+            <option value="">请先选择区服</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>当前库存</label>
+          <div class="current-stock" id="restockCurrent">--</div>
+        </div>
+        <div class="row">
+          <label>补货数量</label>
+          <input type="number" id="restockQty" min="1" value="1" placeholder="输入要增加的数量">
+        </div>
+        <div class="hint">补货后库存 = 当前库存 + 补货数量</div>
+        <div style="margin-top:20px;">
+          <button class="btn success" onclick="doRestock()" style="padding:10px 32px;font-size:15px;">✅ 确认补货</button>
+        </div>
+        <div id="restockMsg" style="margin-top:12px;font-size:13px;"></div>
+      </div>
+
+      <!-- 批量导入补货 -->
+      <div class="batch-import">
+        <h3 style="color:#00ffff;margin-bottom:16px;">📦 批量导入补货数据</h3>
+        <div class="format-hint">
+          <div style="color:#ffff00;margin-bottom:8px;">📝 数据格式（每行一条，逗号分隔）：</div>
+          <div>区服名称, 物品名称, 补货数量</div>
+          <div style="margin-top:8px;color:rgba(0,255,255,0.4);">示例：</div>
+          <div style="font-family:'Courier New',monospace;margin-top:4px;">
+            集结·天使1服, 仙草皇礼包, 10<br>
+            集结·天使1服, 至宝仙草礼包, 5<br>
+            天使黄金1服, 海神神装宝箱, 3
+          </div>
+          <div style="margin-top:8px;color:rgba(255,255,0,0.6);">💡 支持一次性导入多条，系统会自动逐条校验并补货</div>
+        </div>
+        <textarea id="batchInput" placeholder="请粘贴补货数据，格式：区服,物品,数量（每行一条）"></textarea>
+        <div style="margin-top:16px;display:flex;gap:12px;align-items:center;">
+          <button class="btn success" onclick="doBatchRestock()" style="padding:10px 32px;font-size:15px;">📦 批量补货</button>
+          <button class="btn" onclick="document.getElementById('batchInput').value='';document.getElementById('batchResult').style.display='none';" style="padding:10px 24px;font-size:14px;">清空</button>
+        </div>
+        <div id="batchResult" class="result-box"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let TOKEN = '';
+let INVENTORY_DATA = [];
+
+const ITEM_ID_MAP = {
+  "仙草皇礼包": "100332", "至宝仙草礼包": "100315", "海神神装宝箱": "100339",
+  "昊天令礼包": "100343", "深海沉银": "102292", "蓝银之种": "108008",
+  "唐门淬火石宝箱": "6200005", "冰火之泉": "108006",
+  "雪茄选择宝箱1": "1036971", "雪茄选择宝箱2": "1038569", "雪茄选择宝箱3": "1038670",
+  "雪茄选择宝箱4": "1038771", "雪茄选择宝箱5": "1038720", "雪茄选择宝箱（2605）": "1056271"
+};
+
+function lookupItemId(name) { return ITEM_ID_MAP[name] || name; }
+
+function timeAgo(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return Math.floor(diff/60) + '分钟前';
+  if (diff < 86400) return Math.floor(diff/3600) + '小时前';
+  return Math.floor(diff/86400) + '天前';
+}
+
+async function doLogin() {
+  const pass = document.getElementById('passInput').value;
+  if (!pass) { alert('请输入密码'); return; }
+  try {
+    const res = await fetch('/api/orders/__verify__', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass, status: 'shipped' })
+    });
+    if (res.status === 403) {
+      alert('密码错误，请重新输入');
+      return;
+    }
+    TOKEN = pass;
+    const invRes = await fetch('/api/inventory');
+    const invData = await invRes.json();
+    INVENTORY_DATA = invData.servers || [];
+    showDashboard();
+  } catch(e) {
+    alert('连接失败: ' + e.message);
+  }
+}
+
+function showDashboard() {
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('dashboard').style.display = '';
+  document.getElementById('headerRight').innerHTML = `<span style="color:#44ff88;font-size:12px;">✅ 已登录</span> <button class="btn" onclick="exportExcel()" style="padding:6px 14px;font-size:12px;margin-left:8px;">📊 导出Excel</button>`;
+  switchTab('orders');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  // Find and activate the correct tab button by text content
+  const btns = document.querySelectorAll('.tab-btn');
+  for (let i = 0; i < btns.length; i++) {
+    if (btns[i].getAttribute('onclick') && btns[i].getAttribute('onclick').includes(tab)) {
+      btns[i].classList.add('active');
+      break;
+    }
+  }
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'orders') loadOrders();
+  if (tab === 'restock') initRestockForm();
+}
+
+async function loadOrders() {
+  try {
+    const res = await fetch('/api/orders');
+    const data = await res.json();
+    renderOrders(data.orders || []);
+  } catch(e) {
+    alert('连接失败');
+  }
+}
+
+function renderOrders(orders) {
+  const pending = orders.filter(o => o.status === 'pending');
+  const shipped = orders.filter(o => o.status === 'shipped');
+  const cancelled = orders.filter(o => o.status === 'cancelled');
+
+  let html = `
+    <div class="stats">
+      <div class="stat"><div class="num">${orders.length}</div><div class="label">总订单</div></div>
+      <div class="stat pending"><div class="num">${pending.length}</div><div class="label">待发货</div></div>
+      <div class="stat shipped"><div class="num">${shipped.length}</div><div class="label">已发货</div></div>
+      <div class="stat"><div class="num">${cancelled.length}</div><div class="label">已取消</div></div>
+    </div>
+    <div class="toolbar">
+      <select id="filterStatus" onchange="filterOrders()">
+        <option value="all">全部状态</option>
+        <option value="pending" selected>待发货</option>
+        <option value="shipped">已发货</option>
+        <option value="cancelled">已取消</option>
+      </select>
+      <input type="text" id="filterSearch" placeholder="搜索玩家/物品..." oninput="filterOrders()" style="width:200px;">
+      <div class="spacer"></div>
+      <button class="btn" onclick="loadOrders()" style="padding:6px 14px;font-size:12px;">🔄 刷新</button>
+    </div>
+    <table class="order-table">
+      <thead><tr>
+        <th>时间</th><th>区服</th><th>收货玩家</th><th>物品</th><th>数量</th><th>平台</th><th>状态</th><th>操作</th>
+      </tr></thead>
+      <tbody id="orderTbody"></tbody>
+    </table>`;
+
+  document.getElementById('tab-orders').innerHTML = html;
+  renderOrderRows(orders);
+}
+
+function renderOrderRows(orders) {
+  const filter = document.getElementById('filterStatus')?.value || 'all';
+  const search = document.getElementById('filterSearch')?.value?.toLowerCase() || '';
+
+  let filtered = orders;
+  if (filter !== 'all') filtered = filtered.filter(o => o.status === filter);
+  if (search) filtered = filtered.filter(o =>
+    o.buyer.toLowerCase().includes(search) ||
+    o.item.toLowerCase().includes(search) ||
+    o.server.toLowerCase().includes(search)
+  );
+
+  if (filtered.length === 0) {
+    document.getElementById('orderTbody').innerHTML = `<tr><td colspan="8" class="empty-msg">暂无订单</td></tr>`;
+    return;
+  }
+
+  document.getElementById('orderTbody').innerHTML = filtered.map(o => `
+    <tr>
+      <td><div>${new Date(o.createdAt).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div><div class="time-ago">${timeAgo(o.createdAt)}</div></td>
+      <td>${esc(o.server)}</td>
+      <td style="color:#00ffff;font-weight:600;">${esc(o.buyer)}</td>
+      <td>${esc(o.item)}</td>
+      <td style="font-weight:700;">${o.qty}</td>
+      <td style="font-size:12px;color:rgba(0,255,255,0.4);">${esc(o.platform)}</td>
+      <td><span class="status-badge status-${o.status}">${o.status==='pending'?'⏳待发货':o.status==='shipped'?'✅已发货':'❌已取消'}</span></td>
+      <td>
+        ${o.status==='pending'?`<button class="btn success" onclick="updateStatus('${o.id}','shipped')" style="padding:4px 10px;font-size:11px;">发货</button> <button class="btn danger" onclick="updateStatus('${o.id}','cancelled')" style="padding:4px 10px;font-size:11px;">取消</button>`:''}
+        ${o.status==='shipped'?`<button class="btn warning" onclick="updateStatus('${o.id}','pending')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
+        ${o.status==='cancelled'?`<button class="btn" onclick="updateStatus('${o.id}','pending')" style="padding:4px 10px;font-size:11px;">恢复</button>`:''}
+        <button class="btn danger" onclick="deleteOrder('${o.id}')" style="padding:4px 10px;font-size:11px;">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+async function updateStatus(id, status) {
+  try {
+    const res = await fetch(`/api/orders/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN, status })
+    });
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok) {
+      alert('操作失败: ' + (data.error || `HTTP ${res.status}`));
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    loadOrders();
+  } catch(e) {
+    alert('网络错误: ' + e.message);
+  }
+}
+
+async function deleteOrder(id) {
+  if (!confirm('确定删除此订单？')) return;
+  try {
+    const res = await fetch(`/api/orders/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN })
+    });
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok) {
+      alert('删除失败: ' + (data.error || `HTTP ${res.status}`));
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    loadOrders();
+  } catch(e) {
+    alert('网络错误: ' + e.message);
+  }
+}
+
+function filterOrders() {
+  fetch('/api/orders').then(r=>r.json()).then(data => renderOrderRows(data.orders||[]));
+}
+
+async function exportExcel() {
+  const res = await fetch('/api/orders');
+  const data = await res.json();
+  const orders = data.orders || [];
+  if (orders.length === 0) { alert('暂无订单'); return; }
+  const headers = [['区服', '收货玩家', '物品ID', '物品数量', '平台版本']];
+  const rows = orders.filter(o=>o.status==='pending'||o.status==='shipped').map(o => [o.server, o.buyer, lookupItemId(o.item), o.qty, o.platform]);
+  const ws = XLSX.utils.aoa_to_sheet(headers.concat(rows));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '订单记录');
+  XLSX.writeFile(wb, '小酥订单_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+// ====== 补货功能 ======
+
+function initRestockForm() {
+  const sel = document.getElementById('restockServer');
+  sel.innerHTML = '<option value="">请选择区服</option>';
+  INVENTORY_DATA.forEach(sv => {
+    const opt = document.createElement('option');
+    opt.value = sv.server;
+    opt.textContent = sv.server;
+    sel.appendChild(opt);
+  });
+  document.getElementById('restockItem').innerHTML = '<option value="">请先选择区服</option>';
+  document.getElementById('restockCurrent').textContent = '--';
+  document.getElementById('restockMsg').textContent = '';
+  document.getElementById('batchInput').value = '';
+  document.getElementById('batchResult').style.display = 'none';
+}
+
+function onRestockServerChange() {
+  const server = document.getElementById('restockServer').value;
+  const itemSel = document.getElementById('restockItem');
+  itemSel.innerHTML = '<option value="">请选择物品</option>';
+  document.getElementById('restockCurrent').textContent = '--';
+  if (!server) return;
+  const sv = INVENTORY_DATA.find(s => s.server === server);
+  if (!sv) return;
+  sv.items.forEach(cat => {
+    cat.list.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.n;
+      opt.textContent = `${item.n}（当前:${item.q}）`;
+      opt.dataset.qty = item.q;
+      itemSel.appendChild(opt);
+    });
+  });
+}
+
+function onRestockItemChange() {
+  const itemSel = document.getElementById('restockItem');
+  const opt = itemSel.selectedOptions[0];
+  document.getElementById('restockCurrent').textContent = opt && opt.dataset.qty ? opt.dataset.qty : '--';
+}
+
+async function doRestock() {
+  const server = document.getElementById('restockServer').value;
+  const item = document.getElementById('restockItem').value;
+  const qty = parseInt(document.getElementById('restockQty').value);
+  const msg = document.getElementById('restockMsg');
+
+  if (!server || !item || !qty || qty <= 0) {
+    msg.style.color = '#ff4466';
+    msg.textContent = '❌ 请完整填写区服、物品和数量';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/inventory/restock', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN, server, item, qty })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      msg.style.color = '#ff4466';
+      msg.textContent = '❌ ' + (data.error || '操作失败');
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    msg.style.color = '#44ff88';
+    msg.textContent = `✅ 补货成功！${server} 的「${item}」库存: ${data.oldQty} → ${data.newQty}`;
+    const invRes = await fetch('/api/inventory');
+    const invData = await invRes.json();
+    INVENTORY_DATA = invData.servers || [];
+    onRestockServerChange();
+    document.getElementById('restockCurrent').textContent = data.newQty;
+  } catch(e) {
+    msg.style.color = '#ff4466';
+    msg.textContent = '❌ 网络错误: ' + e.message;
+  }
+}
+
+async function doBatchRestock() {
+  const input = document.getElementById('batchInput').value.trim();
+  const resultBox = document.getElementById('batchResult');
+  
+  if (!input) {
+    resultBox.className = 'result-box error';
+    resultBox.innerHTML = '❌ 请先粘贴补货数据';
+    resultBox.style.display = 'block';
+    return;
+  }
+
+  const lines = input.split('\n').filter(l => l.trim());
+  const items = [];
+  const parseErrors = [];
+
+  lines.forEach((line, idx) => {
+    const parts = line.split(',').map(s => s.trim());
+    if (parts.length < 3) {
+      parseErrors.push(`第${idx+1}行格式错误: ${line}`);
+      return;
+    }
+    const qty = parseInt(parts[2]);
+    if (isNaN(qty) || qty <= 0) {
+      parseErrors.push(`第${idx+1}行数量错误: ${parts[2]}`);
+      return;
+    }
+    items.push({ server: parts[0], item: parts[1], qty });
+  });
+
+  if (parseErrors.length > 0) {
+    resultBox.className = 'result-box error';
+    resultBox.innerHTML = `❌ 数据解析失败:<br>${parseErrors.map(e => `• ${e}`).join('<br>')}`;
+    resultBox.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/inventory/batch-restock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN, items })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      resultBox.className = 'result-box error';
+      resultBox.innerHTML = `❌ 批量补货失败: ${data.error || '未知错误'}`;
+      resultBox.style.display = 'block';
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    
+    const { success, failed, details } = data.result;
+    let html = `✅ 批量补货完成！成功 ${success} 条，失败 ${failed} 条<br><br>`;
+    details.forEach(d => {
+      if (d.error) {
+        html += `<span style="color:#ff4466;">❌ ${d.server} / ${d.item}: ${d.error}</span><br>`;
+      } else {
+        html += `<span style="color:#44ff88;">✅ ${d.server} / ${d.item}: +${d.qty} → ${d.newQty}</span><br>`;
+      }
+    });
+    
+    resultBox.className = `result-box ${failed === 0 ? 'success' : 'error'}`;
+    resultBox.innerHTML = html;
+    resultBox.style.display = 'block';
+
+    // 刷新库存缓存
+    const invRes = await fetch('/api/inventory');
+    const invData = await invRes.json();
+    INVENTORY_DATA = invData.servers || [];
+  } catch(e) {
+    resultBox.className = 'result-box error';
+    resultBox.innerHTML = `❌ 网络错误: ${e.message}`;
+    resultBox.style.display = 'block';
+  }
+}
+
+// 自动刷新（每30秒）
+setInterval(() => {
+  if (TOKEN) {
+    const ordersTab = document.getElementById('tab-orders');
+    if (ordersTab && ordersTab.classList.contains('active')) {
+      loadOrders();
+    }
+  }
+}, 30000);
+</script>
+</body>
+</html>

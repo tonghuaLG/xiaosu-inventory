@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  background: linear-gradient(135deg, #0d0d2b 0%, #1a0a3e 50%, #0d0d2b 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.container {
+  background: linear-gradient(180deg, rgba(30,20,60,0.95) 0%, rgba(20,15,50,0.98) 100%);
+  border: 2px solid #c9a84c;
+  border-radius: 16px;
+  padding: 35px;
+  box-shadow: 0 0 60px rgba(201,168,76,0.15), inset 0 0 40px rgba(201,168,76,0.05);
+  max-width: 1000px;
+  width: 100%;
+}
+.title {
+  text-align: center;
+  font-size: 28px;
+  color: #f0d060;
+  letter-spacing: 6px;
+  margin-bottom: 25px;
+  text-shadow: 0 0 20px rgba(240,208,96,0.3);
+  font-weight: bold;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #e0d0b0;
+}
+thead th {
+  background: linear-gradient(180deg, rgba(201,168,76,0.25) 0%, rgba(201,168,76,0.1) 100%);
+  border: 1px solid rgba(201,168,76,0.35);
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 14px;
+  color: #f0d060;
+  font-weight: bold;
+  white-space: nowrap;
+}
+tbody td {
+  border: 1px solid rgba(201,168,76,0.15);
+  padding: 8px 8px;
+  text-align: center;
+  font-size: 13px;
+}
+tbody tr:nth-child(even) {
+  background: rgba(201,168,76,0.04);
+}
+tbody tr:hover {
+  background: rgba(201,168,76,0.08);
+}
+.vip-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #c9a84c, #b8962e);
+  color: #1a0a3e;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 2px 12px;
+  border-radius: 10px;
+}
+.special-row td {
+  background: rgba(255,215,0,0.06) !important;
+  border: 1px solid rgba(201,168,76,0.25) !important;
+  text-align: left !important;
+  padding: 10px 12px !important;
+  line-height: 1.8;
+  color: #d4b860;
+}
+.deadline-row td {
+  background: rgba(255,80,80,0.08) !important;
+  border: 1px solid rgba(255,80,80,0.25) !important;
+  text-align: center !important;
+  padding: 10px 12px !important;
+  color: #ff8888;
+  font-weight: bold;
+  font-size: 14px;
+}
+.bonus-row td {
+  background: rgba(100,200,255,0.05) !important;
+  text-align: left !important;
+  padding: 6px 12px !important;
+  font-size: 12px;
+  color: #90c8e0;
+}
+.bonus-highlight {
+  color: #f0d060;
+  font-weight: bold;
+}
+.special-title {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 15px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">👑 青春（帝皇服）预存福利</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:60px">VIP</th>
+        <th style="width:90px">绑币</th>
+        <th style="width:90px">绑币</th>
+        <th>首充福利</th>
+        <th>永久大奖（月消费100rmb/350绑币）</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="vip-badge">V4</span></td><td>300</td><td>69</td><td>修罗套</td><td>月消费100rmb或者350帮币</td></tr>
+      <tr><td><span class="vip-badge">V5</span></td><td>600</td><td>138</td><td>修罗套+海神*5</td><td></td></tr>
+      <tr><td><span class="vip-badge">V6</span></td><td>1,200</td><td>276</td><td>修罗套+海神*5+草皇5至宝15</td><td></td></tr>
+      <tr><td><span class="vip-badge">V7</span></td><td>2,500</td><td>2,500</td><td>修罗套+海神*5+草皇5至宝15+雪茄50</td><td></td></tr>
+      <tr><td><span class="vip-badge">V8</span></td><td>5,000</td><td>5,000</td><td>修罗套+海神*5+草皇5至宝15+雪茄50+魂核50</td><td></td></tr>
+      <tr><td><span class="vip-badge">V9</span></td><td>9,000</td><td>9,000</td><td>修罗套+海神*5+草皇5至宝15+雪茄100+魂核50</td><td></td></tr>
+      <tr><td><span class="vip-badge">V10</span></td><td>15,000</td><td>15,000</td><td>修罗套+海神*5+草皇5至宝15+雪茄100+魂核100</td><td></td></tr>
+      <tr><td><span class="vip-badge">V11</span></td><td>25,000</td><td>25,000</td><td>修罗套+海神*5+草皇5至宝15+雪茄200+魂核100</td><td></td></tr>
+      <tr><td><span class="vip-badge">V12</span></td><td>40,000</td><td>40,000</td><td>修罗套+海神*5+草皇5至宝15+雪茄400+魂核150</td><td></td></tr>
+      <tr><td><span class="vip-badge">V13</span></td><td>60,000</td><td>60,000</td><td>修罗套+海神*5+草皇5至宝15+雪茄600+魂核200</td><td></td></tr>
+      <tr><td><span class="vip-badge">V14</span></td><td>80,000</td><td>80,000</td><td>修罗套+海神*5+草皇5至宝15+雪茄800+魂核200+五星法阵一套</td><td></td></tr>
+      <tr><td><span class="vip-badge">V15</span></td><td>100,000</td><td>100,000</td><td>修罗套+海神*5+草皇5至宝15+雪茄800+魂核200+五星法阵一套+高级魂核80</td><td></td></tr>
+      <tr class="special-row"><td colspan="5">
+        <span class="special-title">🔥 大佬专属</span><br>
+        预存七窍4.4万加送两套秘法进阶<br>
+        预存主城1万加送五套秘法进阶
+      </td></tr>
+      <tr class="deadline-row"><td colspan="5">
+        ⏰ 开服前预存：7月5日晚23:59:59截止
+      </td></tr>
+      <tr class="bonus-row"><td colspan="5">
+        <span class="bonus-highlight">🎁 预存多拿钻石</span><br>
+        V6 多拿 <span class="bonus-highlight">2,400</span> &nbsp;|&nbsp; V7 多拿 <span class="bonus-highlight">5,000</span> &nbsp;|&nbsp; V8 多拿 <span class="bonus-highlight">10,000</span> &nbsp;|&nbsp; V9 多拿 <span class="bonus-highlight">18,000</span> &nbsp;|&nbsp; V10 多拿 <span class="bonus-highlight">30,000</span><br>
+        V11 多拿 <span class="bonus-highlight">50,000</span> &nbsp;|&nbsp; V12 多拿 <span class="bonus-highlight">80,000</span> &nbsp;|&nbsp; V13 多拿 <span class="bonus-highlight">120,000</span> &nbsp;|&nbsp; V14 多拿 <span class="bonus-highlight">160,000</span> &nbsp;|&nbsp; V15 多拿 <span class="bonus-highlight">200,000</span>
+      </td></tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

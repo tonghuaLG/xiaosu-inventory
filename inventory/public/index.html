@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小酥存货 · 斗罗大陆H5</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: #03050f;
+  color: #c8d6e5;
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 20% 50%, rgba(0, 255, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(255, 0, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(255, 200, 0, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #03050f; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #00ffff, #ff00ff); border-radius: 3px; }
+
+.grid-bg {
+  position: fixed; inset: 0;
+  background-image: 
+    linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none; z-index: 0;
+  animation: gridDrift 20s linear infinite;
+}
+@keyframes gridDrift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(60px, 60px); }
+}
+
+.header {
+  background: rgba(3,5,15,0.85);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+  padding: 20px 24px;
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(16px);
+}
+.header-top {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+  max-width: 1500px; margin: 0 auto;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo {
+  font-size: 22px; font-weight: 900;
+  background: linear-gradient(135deg, #00ffff, #ff00ff, #ffff00, #00ffff);
+  background-size: 300% 300%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: neonFlow 3s ease infinite;
+  letter-spacing: 2px;
+}
+@keyframes neonFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.logo-sub { font-size: 12px; color: rgba(0,255,255,0.5); letter-spacing: 3px; }
+.header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.search-box { position: relative; }
+.search-box input {
+  background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px; padding: 8px 14px 8px 36px;
+  color: #00ffff; font-size: 13px; width: 220px; outline: none; transition: all .3s;
+}
+.search-box input::placeholder { color: rgba(0,255,255,0.25); }
+.search-box input:focus { border-color: #ff00ff; width: 280px; }
+.search-box .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: rgba(0,255,255,0.4); }
+
+.filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 6px 14px; border: 1px solid rgba(0,255,255,0.15); border-radius: 20px;
+  background: transparent; color: rgba(0,255,255,0.5); cursor: pointer;
+  font-size: 12px; transition: all .3s; letter-spacing: 1px;
+}
+.filter-btn:hover { border-color: #00ffff; color: #00ffff; }
+.filter-btn.active {
+  background: linear-gradient(135deg, rgba(0,255,255,0.12), rgba(255,0,255,0.08));
+  border-color: #ff00ff; color: #fff;
+}
+
+.tab-btns { display: flex; gap: 6px; margin-left: 8px; }
+.tab-btn {
+  padding: 6px 14px; border: 1px solid rgba(0,255,255,0.15); border-radius: 20px;
+  background: transparent; color: rgba(0,255,255,0.5); cursor: pointer;
+  font-size: 12px; transition: all .3s;
+}
+.tab-btn.active {
+  background: rgba(0,255,255,0.10); border-color: #00ffff; color: #00ffff;
+}
+
+.stats-bar {
+  max-width: 1500px; margin: 0 auto; padding: 20px 24px 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;
+  position: relative; z-index: 1;
+}
+.stat-card {
+  background: rgba(0,255,255,0.03); border: 1px solid rgba(0,255,255,0.08);
+  border-radius: 12px; padding: 14px 16px; text-align: center; transition: all .3s;
+}
+.stat-card .num {
+  font-size: 24px; font-weight: 900;
+  background: linear-gradient(135deg, #00ffff, #ff00ff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.stat-card .label { font-size: 10px; color: rgba(0,255,255,0.4); margin-top: 4px; letter-spacing: 2px; }
+
+.main { max-width: 1500px; margin: 0 auto; padding: 20px 24px 60px; position: relative; z-index: 1; }
+.server-group { margin-bottom: 32px; }
+.group-title {
+  font-size: 15px; font-weight: 700; color: #00ffff;
+  margin-bottom: 12px; border-left: 3px solid #ff00ff; padding-left: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.server-card {
+  background: linear-gradient(135deg, rgba(0,255,255,0.02), rgba(255,0,255,0.02));
+  border: 1px solid rgba(0,255,255,0.08); border-radius: 14px;
+  margin-bottom: 14px; overflow: hidden; transition: all .3s;
+}
+.server-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; cursor: pointer; user-select: none;
+}
+.server-card-header .name { font-size: 15px; font-weight: 600; color: #e0f0ff; display: flex; align-items: center; gap: 10px; }
+.badge { font-size: 10px; padding: 2px 10px; border-radius: 10px; font-weight: 600; }
+.badge-wan { background: rgba(0,255,255,0.08); color: #00ffff; border: 1px solid rgba(0,255,255,0.15); }
+.badge-huang { background: rgba(255,255,0,0.06); color: #ffff00; border: 1px solid rgba(255,255,0,0.12); }
+.server-card-header .summary { display: flex; gap: 16px; font-size: 12px; color: rgba(0,255,255,0.4); }
+.server-card-header .arrow { color: rgba(0,255,255,0.3); font-size: 14px; transition: transform .3s; }
+.server-card.open .arrow { transform: rotate(180deg); color: #ff00ff; }
+
+.server-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1); }
+.server-card.open .server-content { max-height: 4000px; }
+.server-content-inner {
+  padding: 0 18px 18px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;
+}
+.category-block {
+  background: rgba(0,255,255,0.02); border: 1px solid rgba(0,255,255,0.06);
+  border-radius: 10px; padding: 12px 14px; position: relative; overflow: hidden;
+}
+.category-block::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 2px; height: 100%;
+  background: linear-gradient(180deg, #00ffff, #ff00ff); opacity: 0.3;
+}
+.category-title { font-size: 12px; font-weight: 600; color: rgba(0,255,255,0.6); margin-bottom: 8px; display: flex; justify-content: space-between; }
+.item-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(0,255,255,0.03); font-size: 13px; }
+.item-row:last-child { border-bottom: none; }
+.item-name { color: rgba(200,220,240,0.8); }
+.item-qty { font-weight: 700; color: #e0f0ff; min-width: 36px; text-align: right; }
+.item-qty.high { color: #ffff00; }
+.item-qty.vhigh { color: #ff00ff; }
+.item-buy {
+  margin-left: 8px; padding: 1px 8px; border-radius: 6px;
+  background: rgba(0,255,255,0.08); color: #00ffff; font-size: 11px;
+  cursor: pointer; border: 1px solid rgba(0,255,255,0.15); transition: all .2s;
+}
+.item-buy:hover { background: rgba(0,255,255,0.15); border-color: #00ffff; }
+
+.server-card.hidden { display: none; }
+
+/* ===== 下单弹窗 ===== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 200; justify-content: center; align-items: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #0a0f1e; border: 1px solid rgba(0,255,255,0.2);
+  border-radius: 16px; padding: 28px; width: 90%; max-width: 480px;
+  box-shadow: 0 0 40px rgba(0,255,255,0.1);
+}
+.modal h2 { color: #00ffff; font-size: 18px; margin-bottom: 20px; }
+.modal .form-group { margin-bottom: 14px; }
+.modal label { display: block; font-size: 12px; color: rgba(0,255,255,0.6); margin-bottom: 6px; }
+.modal input, .modal select {
+  width: 100%; background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px; padding: 10px 12px; color: #e0f0ff; font-size: 14px; outline: none;
+}
+.modal input:focus, .modal select:focus { border-color: #ff00ff; }
+.modal .hint { font-size: 11px; color: rgba(0,255,255,0.35); margin-top: 4px; min-height: 16px; }
+.modal .hint.error { color: #ff4466; }
+.modal .hint.ok { color: #44ff88; }
+.modal .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+.btn-neon {
+  padding: 10px 24px; border: 1px solid rgba(0,255,255,0.2); border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0,255,255,0.08), rgba(255,0,255,0.05));
+  color: #00ffff; font-size: 14px; cursor: pointer; transition: all .3s; flex: 1;
+}
+.btn-neon:hover { border-color: #ff00ff; color: #fff; box-shadow: 0 0 16px rgba(255,0,255,0.2); }
+.btn-neon.cancel { color: rgba(0,255,255,0.5); border-color: rgba(0,255,255,0.1); }
+.btn-neon.cancel:hover { border-color: #ff4466; color: #ff4466; }
+.modal .success-msg { display: none; text-align: center; padding: 20px 0; }
+.modal .success-msg .icon { font-size: 48px; }
+.modal .success-msg .text { color: #44ff88; font-size: 16px; margin-top: 10px; }
+
+.empty-text { color: rgba(0,255,255,0.15); font-size: 12px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<div class="header">
+  <div class="header-top">
+    <div class="header-left">
+      <div class="logo">小酥存货✦</div>
+      <div class="logo-sub">斗罗大陆H5 · 跨服库存</div>
+    </div>
+    <div class="header-right">
+      <div class="search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜索服务器 / 物品名称..." oninput="filterAll()">
+      </div>
+      <div class="filter-btns" id="filterBtns">
+        <button class="filter-btn active" data-group="all" onclick="filterGroup(this, 'all')">全部</button>
+        <button class="filter-btn" data-group="天使黄金" onclick="filterGroup(this, '天使黄金')">👑 天使黄金</button>
+        <button class="filter-btn" data-group="天使爆爽" onclick="filterGroup(this, '天使爆爽')">💥 天使爆爽</button>
+        <button class="filter-btn" data-group="天使集结" onclick="filterGroup(this, '天使集结')">⚔️ 天使集结</button>
+        <button class="filter-btn" data-group="天使周年" onclick="filterGroup(this, '天使周年')">🎂 天使周年</button>
+        <button class="filter-btn" data-group="天使万魂" onclick="filterGroup(this, '天使万魂')">⚔️ 天使万魂</button>
+        <button class="filter-btn" data-group="神龍界域" onclick="filterGroup(this, '神龍界域')">🐉 神龍界域</button>
+        <button class="filter-btn" data-group="诸天万域" onclick="filterGroup(this, '诸天万域')">🌌 诸天万域</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+<div class="main" id="app"></div>
+
+<!-- 下单弹窗 -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal">
+    <div id="orderForm">
+      <h2>📝 下单购买</h2>
+      <div class="form-group">
+        <label>区服</label>
+        <input type="text" id="mServer" readonly>
+      </div>
+      <div class="form-group">
+        <label>收货玩家名</label>
+        <input type="text" id="mBuyer" placeholder="请输入你的游戏名">
+      </div>
+      <div class="form-group">
+        <label>物品名称</label>
+        <input type="text" id="mItem" readonly>
+      </div>
+      <div class="form-group">
+        <label>购买数量</label>
+        <input type="number" id="mQty" min="1" value="1" oninput="checkQty()">
+        <div class="hint" id="mHint">库存：--</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-neon cancel" onclick="closeModal()">取消</button>
+        <button class="btn-neon" onclick="submitOrder()">确认下单</button>
+      </div>
+    </div>
+    <div class="success-msg" id="successMsg">
+      <div class="icon">✅</div>
+      <div class="text">下单成功！请等待发货</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let rawData = [];
+let currentGroup = 'all';
+let currentSearch = '';
+let orderServer = '';
+let orderCategory = '';
+let orderItem = '';
+let orderStock = 0;
+
+// 从后端加载库存
+async function loadInventory() {
+  try {
+    const res = await fetch('/api/inventory');
+    const data = await res.json();
+    rawData = data.servers || [];
+    render();
+    renderStats();
+  } catch(e) {
+    document.getElementById('app').innerHTML = '<div style="text-align:center;padding:60px;color:#ff4466;">⚠ 无法连接服务器</div>';
+  }
+}
+
+function getQtyClass(q) {
+  if (q >= 200) return 'vhigh';
+  if (q >= 80) return 'high';
+  return '';
+}
+
+function getShortGroup(name) {
+  if (name.includes('集结')) return '天使集结';
+  if (name.includes('周年')) return '天使周年';
+  if (name.includes('爆爽')) return '天使爆爽';
+  if (name.includes('万魂')) return '天使万魂';
+  if (name.includes('黄金')) return '天使黄金';
+  if (name === '神龍界域') return '神龍界域';
+  if (name === '诸天万域') return '诸天万域';
+  return '天使黄金';
+}
+
+function getBadge(serverName) {
+  if (serverName.includes('万魂')) return 'badge-wan';
+  if (serverName.includes('黄金')) return 'badge-huang';
+  return 'badge-huang';
+}
+
+function catIcon(name) {
+  if (name === '背包') return '🎒';
+  if (name === '雪茄') return '🚬';
+  if (name === '大奖') return '🏆';
+  if (name === '小奖（本月）') return '📅';
+  if (name === '小奖（历史）') return '📜';
+  return '📦';
+}
+
+function renderStats() {
+  let totalItems = 0;
+  const allItems = {};
+  rawData.forEach(s => {
+    s.items.forEach(cat => {
+      cat.list.forEach(item => {
+        totalItems += item.q;
+        allItems[item.n] = (allItems[item.n] || 0) + item.q;
+      });
+    });
+  });
+  const usedServers = rawData.filter(s => s.items.some(c => c.list.length > 0)).length;
+  const topItem = Object.entries(allItems).sort((a,b) => b[1]-a[1])[0];
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card"><div class="num">${rawData.length}</div><div class="label">服务器总数</div></div>
+    <div class="stat-card"><div class="num">${usedServers}</div><div class="label">有库存服务器</div></div>
+    <div class="stat-card"><div class="num">${totalItems.toLocaleString()}</div><div class="label">总物品数量</div></div>
+    <div class="stat-card"><div class="num">${Object.keys(allItems).length}</div><div class="label">物品种类</div></div>
+    <div class="stat-card"><div class="num">${topItem ? topItem[0] : '-'}</div><div class="label">最多物品 (${topItem ? topItem[1] : 0})</div></div>
+  `;
+}
+
+function isServerVisible(server) {
+  if (currentSearch === '' && currentGroup === 'all') return true;
+  if (currentGroup !== 'all' && !server.server.includes(currentGroup)) return false;
+  if (currentSearch !== '') {
+    const s = currentSearch.toLowerCase();
+    if (server.server.toLowerCase().includes(s)) return true;
+    for (const cat of server.items) {
+      for (const item of cat.list) {
+        if (item.n.toLowerCase().includes(s)) return true;
+      }
+    }
+    return false;
+  }
+  return true;
+}
+
+function render() {
+  const groups = {};
+  rawData.forEach(s => {
+    const g = s.group;
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(s);
+  });
+  const groupOrder = ['天使黄金', '天使爆爽', '天使集结', '天使周年', '天使万魂', '神龍界域', '诸天万域'];
+  let html = '';
+
+  groupOrder.forEach(g => {
+    if (!groups[g]) return;
+    const servers = groups[g];
+    const visibleServers = servers.filter(s => isServerVisible(s));
+    if (visibleServers.length === 0) return;
+
+    const icons = {'天使黄金':'👑','天使爆爽':'💥','天使集结':'⚔️','天使周年':'🎂','天使万魂':'⚔️','神龍界域':'🐉','诸天万域':'🌌'};
+    html += `<div class="server-group">
+      <div class="group-title">${icons[g]||'📦'} ${g}大区 <span class="count" style="font-size:11px;font-weight:400;color:rgba(0,255,255,0.35)">${visibleServers.length} 个服务器</span></div>`;
+
+    servers.forEach(s => {
+      const totalQty = s.items.reduce((sum, cat) => sum + cat.list.reduce((s2, item) => s2 + item.q, 0), 0);
+      const itemCount = s.items.reduce((c, cat) => c + cat.list.length, 0);
+      const cls = isServerVisible(s) ? '' : 'hidden';
+      const badgeClass = getBadge(s.server);
+
+      html += `<div class="server-card ${cls}" data-server="${s.server}">
+        <div class="server-card-header" onclick="toggleServer(this)">
+          <div class="name">${s.server} <span class="badge ${badgeClass}">${getShortGroup(s.server)}</span></div>
+          <div class="summary"><span>📦 ${itemCount} 类</span><span>📊 ${totalQty.toLocaleString()} 件</span></div>
+          <div class="arrow">▼</div>
+        </div>
+        <div class="server-content">
+          <div class="server-content-inner">${renderCategories(s)}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  document.getElementById('app').innerHTML = html;
+}
+
+function renderCategories(server) {
+  let html = '';
+  server.items.forEach(cat => {
+    if (cat.list.length === 0) {
+      html += `<div class="category-block"><div class="category-title">${catIcon(cat.cat)} ${cat.cat}</div><div class="empty-text">暂无</div></div>`;
+      return;
+    }
+    html += `<div class="category-block">
+      <div class="category-title">${catIcon(cat.cat)} ${cat.cat} <span style="font-size:10px;background:rgba(0,255,255,0.06);padding:1px 6px;border-radius:6px;color:rgba(0,255,255,0.5)">${cat.list.length}</span></div>`;
+    cat.list.forEach(item => {
+      html += `<div class="item-row">
+        <span class="item-name">${item.n.includes('雪茄') ? '🚬' : '🎁'} ${item.n}</span>
+        <span><span class="item-qty ${getQtyClass(item.q)}">×${item.q}</span>
+        <span class="item-buy" data-sv="${server.server}" data-cat="${cat.cat}" data-item="${item.n}" data-qty="${item.q}" onclick="handleBuy(this)">购买</span></span>span>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  return html;
+}
+
+function toggleServer(header) {
+  header.closest('.server-card').classList.toggle('open');
+}
+
+function filterGroup(btn, group) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentGroup = group;
+  render();
+}
+
+function filterAll() {
+  currentSearch = document.getElementById('searchInput').value;
+  render();
+}
+
+// ===== 下单 =====
+
+function handleBuy(el) {
+  const sv = el.getAttribute('data-sv');
+  const cat = el.getAttribute('data-cat');
+  const item = el.getAttribute('data-item');
+  const qty = parseInt(el.getAttribute('data-qty'));
+  openOrder(sv, cat, item, qty);
+}
+
+function openOrder(server, category, item, stock) {
+  orderServer = server;
+  orderCategory = category;
+  orderItem = item;
+  orderStock = stock;
+  document.getElementById('mServer').value = server;
+  document.getElementById('mItem').value = item;
+  document.getElementById('mQty').value = 1;
+  document.getElementById('mBuyer').value = '';
+  document.getElementById('mHint').textContent = '库存：' + stock;
+  document.getElementById('mHint').className = 'hint';
+  document.getElementById('orderForm').style.display = '';
+  document.getElementById('successMsg').style.display = 'none';
+  document.getElementById('orderModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('orderModal').classList.remove('show');
+}
+
+function checkQty() {
+  const qty = parseInt(document.getElementById('mQty').value) || 0;
+  const hint = document.getElementById('mHint');
+  hint.textContent = '库存：' + orderStock + '　购买：' + qty;
+  if (qty > orderStock) {
+    hint.textContent += '　⚠ 超出库存！';
+    hint.className = 'hint error';
+  } else if (qty > 0) {
+    hint.className = 'hint ok';
+  } else {
+    hint.className = 'hint';
+  }
+}
+
+async function submitOrder() {
+  const buyer = document.getElementById('mBuyer').value.trim();
+  const qty = parseInt(document.getElementById('mQty').value) || 0;
+  if (!buyer) { alert('请输入收货玩家名'); return; }
+  if (qty <= 0) { alert('数量必须大于0'); return; }
+  if (qty > orderStock) { alert('超出库存！'); return; }
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ server: orderServer, buyer, item: orderItem, category: orderCategory, qty, platform: '天使黄金' })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('orderForm').style.display = 'none';
+      document.getElementById('successMsg').style.display = '';
+      // 刷新库存
+      setTimeout(() => { closeModal(); loadInventory(); }, 1500);
+    } else {
+      alert(data.error || '下单失败');
+    }
+  } catch(e) {
+    alert('网络错误，请重试');
+  }
+}
+
+// 初始化
+loadInventory();
+setTimeout(() => {
+  document.querySelectorAll('.server-card:not(.hidden)').forEach((card, i) => {
+    if (i < 3) card.classList.add('open');
+  });
+}, 500);
+</script>
+</body>
+</html>

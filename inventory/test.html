@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>测试</title></head>
+<body style="background:#0a0a1a;color:white;padding:20px;">
+<h1>小酥存货展示</h1>
+<p id="status">加载中...</p>
+<script src="data.js"></script>
+<script>
+try {
+  document.getElementById('status').textContent = '数据加载完成！服务器数: ' + rawData.length;
+  // 只渲染前3个服务器测试
+  let html = '<h2>前3个服务器预览</h2>';
+  for (let i = 0; i < Math.min(3, rawData.length); i++) {
+    const s = rawData[i];
+    html += '<div style="margin:10px 0;padding:10px;border:1px solid #333;background:#111;">';
+    html += '<strong>' + s.server + '</strong> (' + s.group + ')<br>';
+    let totalItems = 0;
+    s.items.forEach(cat => { cat.list.forEach(item => { totalItems += item.q; }); });
+    html += '物品分类: ' + s.items.length + ' | 总数量: ' + totalItems;
+    html += '</div>';
+  }
+  document.body.innerHTML += html;
+} catch(e) {
+  document.body.innerHTML += '<div style="color:red">错误: ' + e.message + '</div>';
+}
+</script>
+</body></html>

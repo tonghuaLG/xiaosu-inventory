@@ -1,0 +1,286 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小酥后台管理</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: #03050f;
+  color: #c8d6e5;
+  min-height: 100vh;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(0,255,255,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(255,0,255,0.04) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #03050f; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #00ffff, #ff00ff); border-radius: 3px; }
+
+.header {
+  background: rgba(3,5,15,0.85); border-bottom: 1px solid rgba(0,255,255,0.15);
+  padding: 16px 24px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo { font-size: 20px; font-weight: 900; background: linear-gradient(135deg, #ff00ff, #ffff00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.logo-sub { font-size: 11px; color: rgba(255,0,255,0.5); margin-left: 12px; }
+
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+
+/* 登录 */
+.login-box {
+  max-width: 360px; margin: 80px auto; background: rgba(0,255,255,0.03);
+  border: 1px solid rgba(0,255,255,0.1); border-radius: 16px; padding: 32px;
+  text-align: center;
+}
+.login-box h2 { color: #00ffff; margin-bottom: 24px; }
+.login-box input {
+  width: 100%; background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px; padding: 10px 14px; color: #e0f0ff; font-size: 14px; outline: none;
+  margin-bottom: 16px;
+}
+.login-box input:focus { border-color: #ff00ff; }
+.btn {
+  padding: 10px 24px; border: 1px solid rgba(0,255,255,0.2); border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0,255,255,0.08), rgba(255,0,255,0.05));
+  color: #00ffff; font-size: 14px; cursor: pointer; transition: all .3s;
+}
+.btn:hover { border-color: #ff00ff; color: #fff; box-shadow: 0 0 16px rgba(255,0,255,0.2); }
+.btn.danger { border-color: rgba(255,68,102,0.3); color: #ff6688; }
+.btn.danger:hover { border-color: #ff4466; }
+.btn.success { border-color: rgba(68,255,136,0.3); color: #44ff88; }
+.btn.success:hover { border-color: #44ff88; }
+.btn.warning { border-color: rgba(255,255,0,0.3); color: #ffff00; }
+
+/* 统计卡片 */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat {
+  background: rgba(0,255,255,0.03); border: 1px solid rgba(0,255,255,0.08);
+  border-radius: 12px; padding: 16px; text-align: center;
+}
+.stat .num { font-size: 28px; font-weight: 900; background: linear-gradient(135deg, #00ffff, #ff00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat .label { font-size: 11px; color: rgba(0,255,255,0.4); margin-top: 4px; letter-spacing: 1px; }
+.stat.pending .num { background: linear-gradient(135deg, #ff6600, #ff0066); -webkit-background-clip: text; background-clip: text; }
+.stat.shipped .num { background: linear-gradient(135deg, #44ff88, #00ffff); -webkit-background-clip: text; background-clip: text; }
+
+/* 工具栏 */
+.toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.toolbar select, .toolbar input {
+  background: rgba(0,255,255,0.04); border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px; padding: 8px 12px; color: #e0f0ff; font-size: 13px; outline: none;
+}
+.toolbar select:focus, .toolbar input:focus { border-color: #ff00ff; }
+.toolbar .spacer { flex: 1; }
+
+/* 订单表 */
+.order-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  background: rgba(0,255,255,0.02); border-radius: 14px; overflow: hidden;
+}
+.order-table th {
+  text-align: left; padding: 12px 10px; color: rgba(0,255,255,0.5);
+  font-size: 11px; letter-spacing: 1px; border-bottom: 1px solid rgba(0,255,255,0.08);
+  background: rgba(0,255,255,0.03);
+}
+.order-table td {
+  padding: 10px; border-bottom: 1px solid rgba(0,255,255,0.03);
+}
+.order-table tr:hover td { background: rgba(0,255,255,0.02); }
+.status-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600;
+}
+.status-pending { background: rgba(255,102,0,0.1); color: #ff6600; border: 1px solid rgba(255,102,0,0.2); }
+.status-shipped { background: rgba(68,255,136,0.1); color: #44ff88; border: 1px solid rgba(68,255,136,0.2); }
+.status-cancelled { background: rgba(255,68,102,0.1); color: #ff4466; border: 1px solid rgba(255,68,102,0.2); }
+.empty-msg { text-align: center; padding: 40px; color: rgba(0,255,255,0.2); font-style: italic; }
+.time-ago { font-size: 11px; color: rgba(0,255,255,0.3); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;">
+    <div class="logo">🔐 小酥后台</div>
+    <span class="logo-sub">订单管理</span>
+  </div>
+  <div id="headerRight"></div>
+</div>
+
+<div class="main" id="app">
+  <div class="login-box" id="loginBox">
+    <h2>🔐 管理员登录</h2>
+    <input type="password" id="passInput" placeholder="输入管理密码" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" onclick="doLogin()" style="width:100%;">登录</button>
+  </div>
+  <div id="dashboard" style="display:none;"></div>
+</div>
+
+<script>
+let TOKEN = '';
+const ITEM_ID_MAP = {
+  "仙草皇礼包": "100332", "至宝仙草礼包": "100315", "海神神装宝箱": "100339",
+  "昊天令礼包": "100343", "深海沉银": "102292", "蓝银之种": "108008",
+  "唐门淬火石宝箱": "6200005", "冰火之泉": "108006",
+  "雪茄选择宝箱1": "1036971", "雪茄选择宝箱2": "1038569", "雪茄选择宝箱3": "1038670",
+  "雪茄选择宝箱4": "1038771", "雪茄选择宝箱5": "1038720", "雪茄选择宝箱（2605）": "1056271"
+};
+
+function lookupItemId(name) { return ITEM_ID_MAP[name] || name; }
+
+function timeAgo(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return Math.floor(diff/60) + '分钟前';
+  if (diff < 86400) return Math.floor(diff/3600) + '小时前';
+  return Math.floor(diff/86400) + '天前';
+}
+
+function doLogin() {
+  TOKEN = document.getElementById('passInput').value;
+  loadOrders();
+}
+
+async function loadOrders() {
+  try {
+    const res = await fetch('/api/orders');
+    const data = await res.json();
+    const orders = data.orders || [];
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('dashboard').style.display = '';
+    document.getElementById('headerRight').innerHTML = `<span style="color:#44ff88;font-size:12px;">✅ 已登录</span> <button class="btn" onclick="exportExcel()" style="padding:6px 14px;font-size:12px;margin-left:8px;">📊 导出Excel</button>`;
+    renderDashboard(orders);
+  } catch(e) {
+    alert('连接失败');
+  }
+}
+
+function renderDashboard(orders) {
+  const pending = orders.filter(o => o.status === 'pending');
+  const shipped = orders.filter(o => o.status === 'shipped');
+  const cancelled = orders.filter(o => o.status === 'cancelled');
+
+  let html = `
+    <div class="stats">
+      <div class="stat"><div class="num">${orders.length}</div><div class="label">总订单</div></div>
+      <div class="stat pending"><div class="num">${pending.length}</div><div class="label">待发货</div></div>
+      <div class="stat shipped"><div class="num">${shipped.length}</div><div class="label">已发货</div></div>
+      <div class="stat"><div class="num">${cancelled.length}</div><div class="label">已取消</div></div>
+    </div>
+    <div class="toolbar">
+      <select id="filterStatus" onchange="filterOrders()">
+        <option value="all">全部状态</option>
+        <option value="pending" selected>待发货</option>
+        <option value="shipped">已发货</option>
+        <option value="cancelled">已取消</option>
+      </select>
+      <input type="text" id="filterSearch" placeholder="搜索玩家/物品..." oninput="filterOrders()" style="width:200px;">
+      <div class="spacer"></div>
+      <button class="btn" onclick="refreshOrders()" style="padding:6px 14px;font-size:12px;">🔄 刷新</button>
+    </div>
+    <table class="order-table">
+      <thead><tr>
+        <th>时间</th><th>区服</th><th>收货玩家</th><th>物品</th><th>数量</th><th>平台</th><th>状态</th><th>操作</th>
+      </tr></thead>
+      <tbody id="orderTbody"></tbody>
+    </table>`;
+
+  document.getElementById('dashboard').innerHTML = html;
+  renderOrderRows(orders);
+}
+
+function renderOrderRows(orders) {
+  const filter = document.getElementById('filterStatus')?.value || 'all';
+  const search = document.getElementById('filterSearch')?.value?.toLowerCase() || '';
+
+  let filtered = orders;
+  if (filter !== 'all') filtered = filtered.filter(o => o.status === filter);
+  if (search) filtered = filtered.filter(o =>
+    o.buyer.toLowerCase().includes(search) ||
+    o.item.toLowerCase().includes(search) ||
+    o.server.toLowerCase().includes(search)
+  );
+
+  if (filtered.length === 0) {
+    document.getElementById('orderTbody').innerHTML = `<tr><td colspan="8" class="empty-msg">暂无订单</td></tr>`;
+    return;
+  }
+
+  document.getElementById('orderTbody').innerHTML = filtered.map(o => `
+    <tr>
+      <td><div>${new Date(o.createdAt).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div><div class="time-ago">${timeAgo(o.createdAt)}</div></td>
+      <td>${esc(o.server)}</td>
+      <td style="color:#00ffff;font-weight:600;">${esc(o.buyer)}</td>
+      <td>${esc(o.item)}</td>
+      <td style="font-weight:700;">${o.qty}</td>
+      <td style="font-size:12px;color:rgba(0,255,255,0.4);">${esc(o.platform)}</td>
+      <td><span class="status-badge status-${o.status}">${o.status==='pending'?'⏳待发货':o.status==='shipped'?'✅已发货':'❌已取消'}</span></td>
+      <td>
+        ${o.status==='pending'?`<button class="btn success" onclick="updateStatus('${o.id}','shipped')" style="padding:4px 10px;font-size:11px;">发货</button> <button class="btn danger" onclick="updateStatus('${o.id}','cancelled')" style="padding:4px 10px;font-size:11px;">取消</button>`:''}
+        ${o.status==='shipped'?`<button class="btn warning" onclick="updateStatus('${o.id}','pending')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
+        ${o.status==='cancelled'?`<button class="btn" onclick="updateStatus('${o.id}','pending')" style="padding:4px 10px;font-size:11px;">恢复</button>`:''}
+        <button class="btn danger" onclick="deleteOrder('${o.id}')" style="padding:4px 10px;font-size:11px;">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+async function updateStatus(id, status) {
+  await fetch(`/api/orders/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: TOKEN, status })
+  });
+  refreshOrders();
+}
+
+async function deleteOrder(id) {
+  if (!confirm('确定删除此订单？')) return;
+  await fetch(`/api/orders/${id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: TOKEN })
+  });
+  refreshOrders();
+}
+
+async function refreshOrders() {
+  const res = await fetch('/api/orders');
+  const data = await res.json();
+  renderDashboard(data.orders || []);
+}
+
+function filterOrders() {
+  fetch('/api/orders').then(r=>r.json()).then(data => renderOrderRows(data.orders||[]));
+}
+
+async function exportExcel() {
+  const res = await fetch('/api/orders');
+  const data = await res.json();
+  const orders = data.orders || [];
+  if (orders.length === 0) { alert('暂无订单'); return; }
+  const headers = [['区服', '收货玩家', '物品ID', '物品数量', '平台版本']];
+  const rows = orders.filter(o=>o.status==='pending'||o.status==='shipped').map(o => [o.server, o.buyer, lookupItemId(o.item), o.qty, o.platform]);
+  const ws = XLSX.utils.aoa_to_sheet(headers.concat(rows));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '订单记录');
+  XLSX.writeFile(wb, '小酥订单_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+// 自动刷新（每30秒）
+setInterval(() => {
+  if (TOKEN) refreshOrders();
+}, 30000);
+</script>
+</body>
+</html>
+
