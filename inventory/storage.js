@@ -39,8 +39,19 @@ function saveOriginalData() {
   console.log('[Firebase] 已保存原始库存数据，共', originalRawData.length, '个服务器');
 }
 
-// 页面加载后立即保存原始数据
-setTimeout(saveOriginalData, 0);
+// 三重保险确保 originalRawData 在任何修改之前保存：
+// 1. 同步立即尝试（storage.js 加载时若 data.js 已加载则立即成功）
+if (typeof rawData !== 'undefined') {
+  originalRawData = JSON.parse(JSON.stringify(rawData));
+  console.log('[Firebase] 已同步保存原始库存数据，共', originalRawData.length, '个服务器');
+}
+// 2. DOMContentLoaded 时再次尝试（此时 data.js 必定已加载，且尚无用户操作）
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    saveOriginalData();
+  });
+}
+// 3. 兜底：在 applyInventoryMods 里也会检查，但以上两步应已覆盖
 
 // ========== Firebase 初始化 ==========
 function initFirebase() {
@@ -123,6 +134,13 @@ async function loadDataFromFirebase() {
     updateSyncStatus('success', '数据加载成功');
     console.log(`[Firebase] 数据加载完成: ${localOrders.length} 个订单, ${localInventoryMods.length} 条库存修改记录`);
 
+    // 加载完数据后立即应用库存修改（防止刷新后修改丢失）
+    if (originalRawData) {
+      await applyInventoryMods();
+    } else {
+      console.warn('[Firebase] originalRawData 尚未保存，跳过自动应用库存修改');
+    }
+
     return true;
   } catch (error) {
     console.error('[Firebase] 数据加载失败:', error);
@@ -204,25 +222,25 @@ async function applyInventoryMods() {
     return;
   }
 
-  // 保存原始数据（仅首次）
-  if (!originalRawData) {
-    saveOriginalData();
-  }
-
   // 重置 rawData 到原始状态，防止重复应用 mod
+  // 注意：rawData 是 const 声明的数组，不能重新赋值，只能修改内容
   if (originalRawData) {
     try {
-      rawData = JSON.parse(JSON.stringify(originalRawData));
+      const backup = JSON.parse(JSON.stringify(originalRawData));
+      rawData.length = 0;          // 清空原数组（保持 const 引用）
+      rawData.push(...backup);      // 用原始数据重新填充
     } catch(e) {
       console.error('[Firebase] 重置库存数据失败:', e);
       return;
     }
+  } else {
+    // originalRawData 未保存，说明页面初始化时序有问题，不再使用脏数据
+    console.error('[Firebase] originalRawData 未保存！无法安全应用库存修改。请刷新页面。');
+    return;
   }
 
   // 如果 Firebase 数据尚未加载，先加载
-  if (!dataLoaded) {
-    await loadDataFromFirebase();
-  }
+  // （此检查已移除：loadDataFromFirebase() 加载完数据后会主动调用 applyInventoryMods()）
 
   if (!localInventoryMods || localInventoryMods.length === 0) return;
 
