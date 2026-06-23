@@ -208,6 +208,7 @@ body::before {
 .modal .success-msg .icon { font-size: 48px; }
 .modal .success-msg .text { color: #44ff88; font-size: 16px; margin-top: 10px; }
 
+
 .empty-text { color: rgba(0,255,255,0.15); font-size: 12px; font-style: italic; }
 </style>
 </head>
@@ -242,7 +243,7 @@ body::before {
 <div class="stats-bar" id="statsBar"></div>
 <div class="main" id="app"></div>
 
-<!-- 下单弹窗 -->
+<!-- 简化下单弹窗 -->
 <div class="modal-overlay" id="orderModal">
   <div class="modal">
     <div id="orderForm">
@@ -269,12 +270,10 @@ body::before {
         <button class="btn-neon" onclick="submitOrder()">确认下单</button>
       </div>
     </div>
-    <div class="success-msg" id="successMsg">
-      <div class="icon">✅</div>
-      <div class="text">下单成功！请等待发货</div>
-    </div>
   </div>
 </div>
+
+
 
 <script>
 let rawData = [];
@@ -354,7 +353,7 @@ function renderStats() {
 
 function isServerVisible(server) {
   if (currentSearch === '' && currentGroup === 'all') return true;
-  if (currentGroup !== 'all' && !server.server.includes(currentGroup)) return false;
+  if (currentGroup !== 'all' && (server.group || '') !== currentGroup) return false;
   if (currentSearch !== '') {
     const s = currentSearch.toLowerCase();
     if (server.server.toLowerCase().includes(s)) return true;
@@ -424,7 +423,7 @@ function renderCategories(server) {
       html += `<div class="item-row">
         <span class="item-name">${item.n.includes('雪茄') ? '🚬' : '🎁'} ${item.n}</span>
         <span><span class="item-qty ${getQtyClass(item.q)}">×${item.q}</span>
-        <span class="item-buy" data-sv="${server.server}" data-cat="${cat.cat}" data-item="${item.n}" data-qty="${item.q}" onclick="handleBuy(this)">购买</span></span>span>
+        <span class="item-buy" data-sv="${server.server}" data-cat="${cat.cat}" data-item="${item.n}" data-qty="${item.q}" onclick="handleBuy(this)">购买</span></span>
       </div>`;
     });
     html += `</div>`;
@@ -470,7 +469,6 @@ function openOrder(server, category, item, stock) {
   document.getElementById('mHint').textContent = '库存：' + stock;
   document.getElementById('mHint').className = 'hint';
   document.getElementById('orderForm').style.display = '';
-  document.getElementById('successMsg').style.display = 'none';
   document.getElementById('orderModal').classList.add('show');
 }
 
@@ -507,10 +505,8 @@ async function submitOrder() {
     });
     const data = await res.json();
     if (data.ok) {
-      document.getElementById('orderForm').style.display = 'none';
-      document.getElementById('successMsg').style.display = '';
-      // 刷新库存
-      setTimeout(() => { closeModal(); loadInventory(); }, 1500);
+      closeModal();
+      alert('下单成功！');
     } else {
       alert(data.error || '下单失败');
     }
