@@ -173,7 +173,7 @@ body::before {
 
 .server-card.hidden { display: none; }
 
-/* ===== 下单弹窗 ===== */
+/* ====== Modal ====== */
 .modal-overlay {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
   z-index: 200; justify-content: center; align-items: center;
@@ -218,21 +218,21 @@ body::before {
 <div class="header">
   <div class="header-top">
     <div class="header-left">
-      <div class="logo">小酥存货✦</div>
-      <div class="logo-sub">斗罗大陆H5 · 跨服库存</div>
+      <div class="logo">小酥存货站</div>
+      <div class="logo-sub">斗罗大陆H5 · 全区全服资源</div>
     </div>
     <div class="header-right">
       <div class="search-box">
         <span class="icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="搜索服务器 / 物品名称..." oninput="filterAll()">
+        <input type="text" id="searchInput" placeholder="搜索物品 / 区服..." oninput="filterAll()">
       </div>
       <div class="filter-btns" id="filterBtns">
         <button class="filter-btn active" data-group="all" onclick="filterGroup(this, 'all')">全部</button>
-        <button class="filter-btn" data-group="天使黄金" onclick="filterGroup(this, '天使黄金')">👑 天使黄金</button>
-        <button class="filter-btn" data-group="天使爆爽" onclick="filterGroup(this, '天使爆爽')">💥 天使爆爽</button>
+        <button class="filter-btn" data-group="天使万魂" onclick="filterGroup(this, '天使万魂')">👑 天使万魂</button>
         <button class="filter-btn" data-group="天使集结" onclick="filterGroup(this, '天使集结')">⚔️ 天使集结</button>
-        <button class="filter-btn" data-group="天使周年" onclick="filterGroup(this, '天使周年')">🎂 天使周年</button>
-        <button class="filter-btn" data-group="天使万魂" onclick="filterGroup(this, '天使万魂')">⚔️ 天使万魂</button>
+        <button class="filter-btn" data-group="天使爆爽" onclick="filterGroup(this, '天使爆爽')">🔥 天使爆爽</button>
+        <button class="filter-btn" data-group="天使周年" onclick="filterGroup(this, '天使周年')">🎉 天使周年</button>
+        <button class="filter-btn" data-group="天使黄金" onclick="filterGroup(this, '天使黄金')">⭐ 天使黄金</button>
         <button class="filter-btn" data-group="神龍界域" onclick="filterGroup(this, '神龍界域')">🐉 神龍界域</button>
         <button class="filter-btn" data-group="诸天万域" onclick="filterGroup(this, '诸天万域')">🌌 诸天万域</button>
       </div>
@@ -243,18 +243,18 @@ body::before {
 <div class="stats-bar" id="statsBar"></div>
 <div class="main" id="app"></div>
 
-<!-- 简化下单弹窗 -->
+<!-- Order Modal -->
 <div class="modal-overlay" id="orderModal">
   <div class="modal">
     <div id="orderForm">
-      <h2>📝 下单购买</h2>
+      <h2>📝 填写订单信息</h2>
       <div class="form-group">
         <label>区服</label>
         <input type="text" id="mServer" readonly>
       </div>
       <div class="form-group">
-        <label>收货玩家名</label>
-        <input type="text" id="mBuyer" placeholder="请输入你的游戏名">
+        <label>买家标识/联系方式</label>
+        <input type="text" id="mBuyer" placeholder="请输入您的联系方式">
       </div>
       <div class="form-group">
         <label>物品名称</label>
@@ -284,7 +284,7 @@ let orderCategory = '';
 let orderItem = '';
 let orderStock = 0;
 
-// 从后端加载库存
+// Load inventory from API
 async function loadInventory() {
   try {
     const res = await fetch('/api/inventory');
@@ -293,7 +293,7 @@ async function loadInventory() {
     render();
     renderStats();
   } catch(e) {
-    document.getElementById('app').innerHTML = '<div style="text-align:center;padding:60px;color:#ff4466;">⚠ 无法连接服务器</div>';
+    document.getElementById('app').innerHTML = '<div style="text-align:center;padding:60px;color:#ff4466;">⚠️ 加载失败，请刷新重试</div>';
   }
 }
 
@@ -304,28 +304,28 @@ function getQtyClass(q) {
 }
 
 function getShortGroup(name) {
-  if (name.includes('集结')) return '天使集结';
-  if (name.includes('周年')) return '天使周年';
-  if (name.includes('爆爽')) return '天使爆爽';
-  if (name.includes('万魂')) return '天使万魂';
-  if (name.includes('黄金')) return '天使黄金';
+  if (name.includes('天使爆爽')) return '天使爆爽';
+  if (name.includes('天使周年')) return '天使周年';
+  if (name.includes('天使集结')) return '天使集结';
+  if (name.includes('天使黄金')) return '天使黄金';
+  if (name.includes('天使万魂')) return '天使万魂';
   if (name === '神龍界域') return '神龍界域';
   if (name === '诸天万域') return '诸天万域';
-  return '天使黄金';
+  return '天使万魂';
 }
 
 function getBadge(serverName) {
-  if (serverName.includes('万魂')) return 'badge-wan';
-  if (serverName.includes('黄金')) return 'badge-huang';
+  if (serverName.includes('天使黄金')) return 'badge-wan';
+  if (serverName.includes('天使万魂')) return 'badge-huang';
   return 'badge-huang';
 }
 
 function catIcon(name) {
-  if (name === '背包') return '🎒';
   if (name === '雪茄') return '🚬';
-  if (name === '大奖') return '🏆';
-  if (name === '小奖（本月）') return '📅';
-  if (name === '小奖（历史）') return '📜';
+  if (name === '雪茄盒') return '📦';
+  if (name === '魂环') return '💍';
+  if (name === '魂骨（天使）') return '🦴';
+  if (name === '魂骨（其他）') return '🦴';
   return '📦';
 }
 
@@ -343,11 +343,11 @@ function renderStats() {
   const usedServers = rawData.filter(s => s.items.some(c => c.list.length > 0)).length;
   const topItem = Object.entries(allItems).sort((a,b) => b[1]-a[1])[0];
   document.getElementById('statsBar').innerHTML = `
-    <div class="stat-card"><div class="num">${rawData.length}</div><div class="label">服务器总数</div></div>
-    <div class="stat-card"><div class="num">${usedServers}</div><div class="label">有库存服务器</div></div>
-    <div class="stat-card"><div class="num">${totalItems.toLocaleString()}</div><div class="label">总物品数量</div></div>
+    <div class="stat-card"><div class="num">${rawData.length}</div><div class="label">区服总数</div></div>
+    <div class="stat-card"><div class="num">${usedServers}</div><div class="label">有货区服</div></div>
+    <div class="stat-card"><div class="num">${totalItems.toLocaleString()}</div><div class="label">物品总库存</div></div>
     <div class="stat-card"><div class="num">${Object.keys(allItems).length}</div><div class="label">物品种类</div></div>
-    <div class="stat-card"><div class="num">${topItem ? topItem[0] : '-'}</div><div class="label">最多物品 (${topItem ? topItem[1] : 0})</div></div>
+    <div class="stat-card"><div class="num">${topItem ? topItem[0] : '-'}</div><div class="label">热销 (${topItem ? topItem[1] : 0})</div></div>
   `;
 }
 
@@ -374,7 +374,7 @@ function render() {
     if (!groups[g]) groups[g] = [];
     groups[g].push(s);
   });
-  const groupOrder = ['天使黄金', '天使爆爽', '天使集结', '天使周年', '天使万魂', '神龍界域', '诸天万域'];
+  const groupOrder = ['天使万魂', '天使集结', '天使爆爽', '天使周年', '天使黄金', '神龍界域', '诸天万域'];
   let html = '';
 
   groupOrder.forEach(g => {
@@ -383,9 +383,9 @@ function render() {
     const visibleServers = servers.filter(s => isServerVisible(s));
     if (visibleServers.length === 0) return;
 
-    const icons = {'天使黄金':'👑','天使爆爽':'💥','天使集结':'⚔️','天使周年':'🎂','天使万魂':'⚔️','神龍界域':'🐉','诸天万域':'🌌'};
+    const icons = {'天使万魂':'👑','天使集结':'⚔️','天使爆爽':'🔥','天使周年':'🎉','天使黄金':'⭐','神龍界域':'🐉','诸天万域':'🌌'};
     html += `<div class="server-group">
-      <div class="group-title">${icons[g]||'📦'} ${g}大区 <span class="count" style="font-size:11px;font-weight:400;color:rgba(0,255,255,0.35)">${visibleServers.length} 个服务器</span></div>`;
+      <div class="group-title">${icons[g]||'📦'} ${g}区服 <span class="count" style="font-size:11px;font-weight:400;color:rgba(0,255,255,0.35)">${visibleServers.length} 个区服</span></div>`;
 
     servers.forEach(s => {
       const totalQty = s.items.reduce((sum, cat) => sum + cat.list.reduce((s2, item) => s2 + item.q, 0), 0);
@@ -396,7 +396,7 @@ function render() {
       html += `<div class="server-card ${cls}" data-server="${s.server}">
         <div class="server-card-header" onclick="toggleServer(this)">
           <div class="name">${s.server} <span class="badge ${badgeClass}">${getShortGroup(s.server)}</span></div>
-          <div class="summary"><span>📦 ${itemCount} 类</span><span>📊 ${totalQty.toLocaleString()} 件</span></div>
+          <div class="summary"><span>📦 ${itemCount} 种</span><span>🔥 ${totalQty.toLocaleString()} 件</span></div>
           <div class="arrow">▼</div>
         </div>
         <div class="server-content">
@@ -414,14 +414,14 @@ function renderCategories(server) {
   let html = '';
   server.items.forEach(cat => {
     if (cat.list.length === 0) {
-      html += `<div class="category-block"><div class="category-title">${catIcon(cat.cat)} ${cat.cat}</div><div class="empty-text">暂无</div></div>`;
+      html += `<div class="category-block"><div class="category-title">${catIcon(cat.cat)} ${cat.cat}</div><div class="empty-text">暂无库存</div></div>`;
       return;
     }
     html += `<div class="category-block">
       <div class="category-title">${catIcon(cat.cat)} ${cat.cat} <span style="font-size:10px;background:rgba(0,255,255,0.06);padding:1px 6px;border-radius:6px;color:rgba(0,255,255,0.5)">${cat.list.length}</span></div>`;
     cat.list.forEach(item => {
       html += `<div class="item-row">
-        <span class="item-name">${item.n.includes('雪茄') ? '🚬' : '🎁'} ${item.n}</span>
+        <span class="item-name">${item.n.includes('雪茄盒') ? '📦' : '🚬'} ${item.n}</span>
         <span><span class="item-qty ${getQtyClass(item.q)}">×${item.q}</span>
         <span class="item-buy" data-sv="${server.server}" data-cat="${cat.cat}" data-item="${item.n}" data-qty="${item.q}" onclick="handleBuy(this)">购买</span></span>
       </div>`;
@@ -447,7 +447,7 @@ function filterAll() {
   render();
 }
 
-// ===== 下单 =====
+// ====== Order ======
 
 function handleBuy(el) {
   const sv = el.getAttribute('data-sv');
@@ -479,9 +479,9 @@ function closeModal() {
 function checkQty() {
   const qty = parseInt(document.getElementById('mQty').value) || 0;
   const hint = document.getElementById('mHint');
-  hint.textContent = '库存：' + orderStock + '　购买：' + qty;
+  hint.textContent = '库存：' + orderStock + ' | 购买：' + qty;
   if (qty > orderStock) {
-    hint.textContent += '　⚠ 超出库存！';
+    hint.textContent += ' | ⚠️ 库存不足';
     hint.className = 'hint error';
   } else if (qty > 0) {
     hint.className = 'hint ok';
@@ -493,15 +493,15 @@ function checkQty() {
 async function submitOrder() {
   const buyer = document.getElementById('mBuyer').value.trim();
   const qty = parseInt(document.getElementById('mQty').value) || 0;
-  if (!buyer) { alert('请输入收货玩家名'); return; }
-  if (qty <= 0) { alert('数量必须大于0'); return; }
-  if (qty > orderStock) { alert('超出库存！'); return; }
+  if (!buyer) { alert('请输入联系方式'); return; }
+  if (qty <= 0) { alert('购买数量必须大于0'); return; }
+  if (qty > orderStock) { alert('库存不足'); return; }
 
   try {
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ server: orderServer, buyer, item: orderItem, category: orderCategory, qty, platform: '天使黄金' })
+      body: JSON.stringify({ server: orderServer, buyer, item: orderItem, category: orderCategory, qty, platform: '天使万魂' })
     });
     const data = await res.json();
     if (data.ok) {
@@ -515,7 +515,7 @@ async function submitOrder() {
   }
 }
 
-// 初始化
+// Init
 loadInventory();
 setTimeout(() => {
   document.querySelectorAll('.server-card:not(.hidden)').forEach((card, i) => {
