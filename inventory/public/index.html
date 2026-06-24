@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -479,6 +479,19 @@
       }
       .item-server-tag {
         background-color: var(--bg-surface-secondary);
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+      .tag-sep {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        margin: 0 2px;
+      }
+      .item-cat-tag {
+        background-color: var(--accent-gold-light);
+        color: var(--accent-gold);
         border-radius: 4px;
         padding: 2px 8px;
         font-size: 0.8rem;
@@ -1365,7 +1378,7 @@
         if (currentServer) items = items.filter(i => i.server === currentServer);
         if (currentCategory) items = items.filter(i => i.category === currentCategory);
         const keyword = (document.getElementById('searchInput').value || '').toLowerCase();
-        if (keyword) items = items.filter(i => i.name.toLowerCase().includes(keyword) || i.category.toLowerCase().includes(keyword));
+        if (keyword) items = items.filter(i => i.name.toLowerCase().includes(keyword) || i.server.toLowerCase().includes(keyword) || i.category.toLowerCase().includes(keyword));
         if (items.length === 0) {
           grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><p>暂无道具</p></div>';
           return;
@@ -1382,7 +1395,7 @@
                   <span class="item-stock">库存 ${item.stock}</span>
                 </div>
                 <div class="item-meta">
-                  <span class="item-server-tag">${item.server} · ${item.category}</span>
+                  <span class="item-server-tag">${item.server}</span><span class="tag-sep"> / </span><span class="item-cat-tag">${item.category}</span>
                   <span class="item-price">￥${item.price}</span>
                 </div>
               </div>
