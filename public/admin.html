@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小酥后台管理</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+/* ===== 与 index.html 完全一致的基础变量 ===== */
+:root {
+  --gold: #c8973a;
+  --gold-light: #f1d98a;
+  --gold-gradient: linear-gradient(135deg, #f1c557, #c8973a);
+  --blue: #1e40af;
+  --blue-light: #3b82f6;
+  --bg: #0f172a;
+  --card-bg: rgba(30, 64, 175, 0.15);
+  --border: rgba(200, 151, 58, 0.25);
+  --text: #f5f5f5;
+  --text-dim: rgba(255, 215, 0, 0.5);
+  --radius: 14px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(200,151,58,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(30,64,175,0.12) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+::-webkit-scrollbar-thumb { background: var(--gold-gradient); border-radius: 3px; }
+
+/* ===== 顶部导航（与 index.html 风格一致）===== */
+.navbar {
+  background: rgba(15,23,42,0.95);
+  border-bottom: 2px solid var(--gold);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.navbar-brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.navbar-logo {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--gold-gradient);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 900; color: #1a1a2e;
+}
+.navbar-title {
+  font-size: 18px; font-weight: 800; color: var(--gold-light);
+  letter-spacing: 1px;
+}
+.navbar-sub { font-size: 11px; color: var(--text-dim); }
+#headerRight { display: flex; align-items: center; gap: 10px; }
+#headerRight .status-ok {
+  color: #4ade80; font-size: 12px; font-weight: 600;
+}
+.btn {
+  padding: 8px 18px; border: 1.5px solid var(--gold); border-radius: 10px;
+  background: rgba(200,151,58,0.1); color: var(--gold-light);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .25s; font-family: var(--font);
+}
+.btn:hover {
+  background: rgba(200,151,58,0.25); color: #fff;
+  box-shadow: 0 0 16px rgba(200,151,58,0.3);
+}
+.btn-success { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.1); }
+.btn-success:hover { background: rgba(74,222,128,0.25); color: #fff; }
+.btn-danger { border-color: #ff4466; color: #ff6688; background: rgba(255,68,102,0.1); }
+.btn-danger:hover { background: rgba(255,68,102,0.25); color: #fff; }
+.btn-warning { border-color: #fbbf24; color: #fbbf24; background: rgba(251,191,36,0.1); }
+.btn-warning:hover { background: rgba(251,191,36,0.25); color: #fff; }
+
+/* ===== 主容器 ===== */
+.main { max-width: 1100px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+
+/* ===== 登录 ===== */
+.login-wrap {
+  min-height: 80vh; display: flex; align-items: center; justify-content: center;
+}
+.login-card {
+  background: var(--card-bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 40px 36px; width: 360px;
+  text-align: center; box-shadow: var(--shadow);
+}
+.login-card h2 {
+  font-size: 22px; font-weight: 800; color: var(--gold-light);
+  margin-bottom: 28px;
+}
+.login-card input {
+  width: 100%; background: rgba(0,0,0,0.3); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; color: var(--text);
+  font-size: 15px; outline: none; margin-bottom: 18px;
+  font-family: var(--font); transition: border-color .2s;
+}
+.login-card input:focus { border-color: var(--gold); box-shadow: 0 0 12px rgba(200,151,58,0.2); }
+.login-card .btn { width: 100%; padding: 12px; font-size: 15px; }
+
+/* ===== Tabs ===== */
+.tabs {
+  display: flex; gap: 0; margin-bottom: 24px;
+  border-bottom: 2px solid rgba(200,151,58,0.2);
+}
+.tab-btn {
+  padding: 12px 22px; border: none; background: none;
+  color: var(--text-dim); font-size: 14px; font-weight: 600;
+  cursor: pointer; border-bottom: 2.5px solid transparent;
+  transition: all .2s; font-family: var(--font);
+}
+.tab-btn:hover { color: var(--gold-light); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== 统计卡片 ===== */
+.stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.stat {
+  background: var(--card-bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 14px; text-align: center;
+}
+.stat .num {
+  font-size: 30px; font-weight: 900;
+  background: var(--gold-gradient); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
+}
+.stat .label { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+.stat.pending .num { background: linear-gradient(135deg,#ffa500,#dc143c); -webkit-background-clip: text; background-clip: text; }
+.stat.shipped .num { background: linear-gradient(135deg,#4ade80,#3b82f6); -webkit-background-clip: text; background-clip: text; }
+
+/* ===== 工具栏 ===== */
+.toolbar {
+  display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;
+}
+.toolbar select, .toolbar input {
+  background: rgba(0,0,0,0.3); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 8px 14px; color: var(--text);
+  font-size: 13px; outline: none; font-family: var(--font);
+  transition: border-color .2s;
+}
+.toolbar select:focus, .toolbar input:focus { border-color: var(--gold); }
+.toolbar .spacer { flex: 1; }
+
+/* ===== 订单表 ===== */
+.order-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  background: var(--card-bg); border-radius: var(--radius); overflow: hidden;
+}
+.order-table th {
+  text-align: left; padding: 12px 10px; color: var(--text-dim);
+  font-size: 11px; letter-spacing: 1px; border-bottom: 1.5px solid var(--border);
+  background: rgba(0,0,0,0.2);
+}
+.order-table td { padding: 10px; border-bottom: 1px solid rgba(200,151,58,0.1); }
+.order-table tr:hover td { background: rgba(200,151,58,0.05); }
+.status-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 10px;
+  font-size: 11px; font-weight: 600;
+}
+.status-pending { background: rgba(255,165,0,0.15); color: #ffa500; border: 1px solid rgba(255,165,0,0.3); }
+.status-shipped { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+.status-cancelled { background: rgba(255,68,102,0.15); color: #ff6688; border: 1px solid rgba(255,68,102,0.3); }
+.empty-msg { text-align: center; padding: 40px; color: var(--text-dim); font-style: italic; }
+.time-ago { font-size: 11px; color: rgba(255,215,0,0.35); }
+
+/* ===== 表单卡片 ===== */
+.form-card {
+  background: var(--card-bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 24px; max-width: 600px; margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.form-card h3 { color: var(--gold-light); font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+.form-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
+.form-row label { min-width: 80px; color: var(--text-dim); font-size: 13px; font-weight: 600; }
+.form-row select, .form-row input {
+  flex: 1; background: rgba(0,0,0,0.3); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; color: var(--text);
+  font-size: 14px; outline: none; font-family: var(--font);
+  transition: border-color .2s;
+}
+.form-row select:focus, .form-row input:focus { border-color: var(--gold); }
+.hint { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+.current-stock { font-size: 15px; color: #4ade80; font-weight: 700; }
+
+/* ===== 批量导入区 ===== */
+.batch-card {
+  background: var(--card-bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 24px; max-width: 800px;
+  box-shadow: var(--shadow);
+}
+.batch-card h3 { color: var(--gold-light); font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.format-hint {
+  background: rgba(0,0,0,0.25); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; font-size: 12px;
+  color: var(--text-dim); margin-bottom: 16px; line-height: 1.9;
+}
+.format-hint .highlight { color: #fbbf24; font-weight: 600; }
+.batch-card textarea {
+  width: 100%; height: 200px; background: rgba(0,0,0,0.3);
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 14px; color: var(--text); font-size: 13px; outline: none;
+  font-family: 'Courier New', monospace; resize: vertical;
+  transition: border-color .2s;
+}
+.batch-card textarea:focus { border-color: var(--gold); }
+.result-box {
+  margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 13px; display: none;
+}
+.result-box.success { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; }
+.result-box.error { background: rgba(255,68,102,0.1); border: 1px solid rgba(255,68,102,0.3); color: #ff6688; }
+
+/* ===== 确认弹窗 ===== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: #1e293b; border: 2px solid #ff4466;
+  border-radius: var(--radius); padding: 32px; max-width: 380px; width: 90%;
+  text-align: center; box-shadow: 0 0 40px rgba(255,68,102,0.25);
+}
+.modal-box .modal-icon { font-size: 48px; margin-bottom: 16px; }
+.modal-box h3 { color: var(--gold-light); font-size: 18px; margin-bottom: 10px; }
+.modal-box p { color: var(--text-dim); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+.modal-btns { display: flex; gap: 12px; justify-content: center; }
+.modal-btns .btn { padding: 10px 28px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="navbar-logo">酥</div>
+    <div>
+      <div class="navbar-title">小酥后台管理</div>
+      <div class="navbar-sub">管理面板</div>
+    </div>
+  </div>
+  <div id="headerRight"></div>
+</nav>
+
+<!-- 主内容 -->
+<div class="main" id="app">
+  <!-- 登录 -->
+  <div class="login-wrap" id="loginWrap">
+    <div class="login-card">
+      <h2>管理员登录</h2>
+      <input type="password" id="passInput" placeholder="输入管理密码" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="btn" onclick="doLogin()">登录</button>
+    </div>
+  </div>
+
+  <!-- 仪表盘 -->
+  <div id="dashboard" style="display:none;">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('orders')">📦 订单管理</button>
+      <button class="tab-btn" onclick="switchTab('restock')">🔄 补货管理</button>
+      <button class="tab-btn" onclick="switchTab('import')">📥 文本导入存货</button>
+    </div>
+
+    <!-- 订单管理 -->
+    <div id="tab-orders" class="tab-content active"></div>
+
+    <!-- 补货管理 -->
+    <div id="tab-restock" class="tab-content">
+      <div class="form-card">
+        <h3>单个补货</h3>
+        <div class="form-row">
+          <label>区服</label>
+          <select id="restockServer" onchange="onRestockServerChange()">
+            <option value="">请选择区服</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>物品</label>
+          <select id="restockItem" onchange="onRestockItemChange()">
+            <option value="">请先选择区服</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>当前库存</label>
+          <div class="current-stock" id="restockCurrent">--</div>
+        </div>
+        <div class="form-row">
+          <label>补货数量</label>
+          <input type="number" id="restockQty" min="1" value="1" placeholder="输入要增加的数量">
+        </div>
+        <div class="hint">补货后库存 = 当前库存 + 补货数量</div>
+        <div style="margin-top:20px;">
+          <button class="btn btn-success" onclick="doRestock()" style="padding:10px 32px;font-size:15px;">确认补货</button>
+        </div>
+        <div id="restockMsg" style="margin-top:12px;font-size:13px;"></div>
+      </div>
+
+      <div class="batch-card">
+        <h3>批量导入补货数据</h3>
+        <div class="format-hint">
+          <div class="highlight">数据格式（每行一条，逗号分隔）：</div>
+          <div>区服名称, 物品名称, 补货数量</div>
+          <div style="margin-top:8px;color:rgba(255,215,0,0.4);">示例：</div>
+          <div style="font-family:'Courier New',monospace;margin-top:4px;">
+            集结·天使1服, 仙草皇礼包, 10<br>
+            集结·天使1服, 至宝仙草礼包, 5<br>
+            天使黄金1服, 海神神装宝箱, 3
+          </div>
+          <div style="margin-top:8px;color:#fbbf24;">支持一次性导入多条，系统会自动逐条校验并补货</div>
+        </div>
+        <textarea id="batchInput" placeholder="请粘贴补货数据，格式：区服,物品,数量（每行一条）"></textarea>
+        <div style="margin-top:16px;display:flex;gap:12px;align-items:center;">
+          <button class="btn btn-success" onclick="doBatchRestock()" style="padding:10px 32px;font-size:15px;">批量补货</button>
+          <button class="btn" onclick="document.getElementById('batchInput').value='';document.getElementById('batchResult').style.display='none';" style="padding:10px 24px;font-size:14px;">清空</button>
+        </div>
+        <div id="batchResult" class="result-box"></div>
+      </div>
+    </div>
+
+    <!-- 文本导入存货 -->
+    <div id="tab-import" class="tab-content">
+      <div class="batch-card">
+        <h3>文本导入存货</h3>
+        <div class="format-hint">
+          <div class="highlight">数据格式：</div>
+          <div>区服名 → 分类名 → 物品名/数量（物品与数量占两行）</div>
+          <div style="margin-top:8px;color:rgba(255,215,0,0.4);">支持 <code>==========</code> 分隔多个区服，或自动识别（含「服」字的行）</div>
+          <div style="margin-top:8px;color:rgba(255,215,0,0.4);">分类：背包 / 雪茄 / 大奖 / 小奖（本月）/ 小奖（历史）</div>
+          <div style="margin-top:8px;color:rgba(255,215,0,0.4);font-family:'Courier New',monospace;">
+            天使黄金1服<br>
+            背包<br>
+            仙草皇礼包<br>
+            5<br>
+            雪茄<br>
+            至宝仙草礼包<br>
+            3<br>
+            ==========<br>
+            天使黄金2服<br>
+            ...
+          </div>
+        </div>
+        <textarea id="importTextInput" placeholder="请粘贴存货文本..." style="min-height:200px;"></textarea>
+        <div style="margin-top:16px;display:flex;gap:12px;align-items:center;">
+          <button class="btn btn-success" onclick="parseImportText()" style="padding:10px 32px;font-size:15px;">解析预览</button>
+          <button class="btn" onclick="document.getElementById('importTextInput').value='';document.getElementById('importPreview').innerHTML='';document.getElementById('importMsg').textContent='';document.getElementById('confirmImportBtn').style.display='none';" style="padding:10px 24px;font-size:14px;">清空</button>
+        </div>
+        <div id="importPreview" style="margin-top:20px;"></div>
+        <div style="margin-top:16px;">
+          <button id="confirmImportBtn" class="btn btn-danger" onclick="doImportText()" style="padding:10px 32px;font-size:15px;display:none;">确认导入</button>
+        </div>
+        <div id="importMsg" style="margin-top:12px;font-size:13px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 清空订单确认弹窗 -->
+<div class="modal-overlay" id="clearModal">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <h3>确认清空所有订单？</h3>
+    <p>这将永久删除所有订单（待发货/已发货/已取消）<br>此操作不可撤销！</p>
+    <div class="modal-btns">
+      <button class="btn" onclick="hideClearConfirm()">取消</button>
+      <button class="btn btn-danger" id="clearConfirmBtn" onclick="doClearAllOrders()">确认清空</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let TOKEN = '';
+let INVENTORY_DATA = [];
+
+const ITEM_ID_MAP = {
+  "仙草皇礼包": "100332", "至宝仙草礼包": "100315", "海神神装宝箱": "100339",
+  "昊天令礼包": "100343", "深海沉银": "102292", "蓝银之种": "108008",
+  "唐门淬火石宝箱": "6200005", "冰火之泉": "108006",
+  "雪茄选择宝箱1": "1036971", "雪茄选择宝箱2": "1038569", "雪茄选择宝箱3": "1038670",
+  "雪茄选择宝箱4": "1038771", "雪茄选择宝箱5": "1038720", "雪茄选择宝箱（2605）": "1056271"
+};
+
+function lookupItemId(name) { return ITEM_ID_MAP[name] || name; }
+
+function timeAgo(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return Math.floor(diff/60) + '分钟前';
+  if (diff < 86400) return Math.floor(diff/3600) + '小时前';
+  return Math.floor(diff/86400) + '天前';
+}
+
+async function doLogin() {
+  const pass = document.getElementById('passInput').value;
+  if (!pass) { alert('请输入密码'); return; }
+  try {
+    const res = await fetch('/api/orders/__verify__', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass, status: 'shipped' })
+    });
+    if (res.status === 403) { alert('密码错误，请重新输入'); return; }
+    TOKEN = pass;
+    const invRes = await fetch('/api/inventory');
+    const invData = await invRes.json();
+    INVENTORY_DATA = invData.servers || [];
+    showDashboard();
+  } catch(e) { alert('连接失败: ' + e.message); }
+}
+
+function showDashboard() {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('dashboard').style.display = '';
+  document.getElementById('headerRight').innerHTML =
+    '<span class="status-ok">● 已登录</span>' +
+    '<button class="btn" onclick="exportExcel()" style="padding:6px 14px;font-size:12px;margin-left:8px;">📊 导出Excel</button>';
+  switchTab('orders');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const btns = document.querySelectorAll('.tab-btn');
+  for (let i = 0; i < btns.length; i++) {
+    if (btns[i].getAttribute('onclick') && btns[i].getAttribute('onclick').includes(tab)) {
+      btns[i].classList.add('active'); break;
+    }
+  }
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'orders') loadOrders();
+  if (tab === 'restock') initRestockForm();
+}
+
+async function loadOrders() {
+  try {
+    const res = await fetch('/api/orders');
+    const data = await res.json();
+    renderOrders(data.orders || []);
+  } catch(e) { alert('连接失败'); }
+}
+
+function renderOrders(orders) {
+  const pending = orders.filter(o => o.status === 'pending');
+  const shipped = orders.filter(o => o.status === 'shipped');
+  const cancelled = orders.filter(o => o.status === 'cancelled');
+
+  let html = `
+    <div class="stats">
+      <div class="stat"><div class="num">${orders.length}</div><div class="label">总订单</div></div>
+      <div class="stat pending"><div class="num">${pending.length}</div><div class="label">待发货</div></div>
+      <div class="stat shipped"><div class="num">${shipped.length}</div><div class="label">已发货</div></div>
+      <div class="stat"><div class="num">${cancelled.length}</div><div class="label">已取消</div></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-danger" onclick="showClearConfirm()" style="padding:6px 14px;font-size:12px;">🗑️ 清空所有订单</button>
+      <select id="filterStatus" onchange="filterOrders()">
+        <option value="all">全部状态</option>
+        <option value="pending" selected>待发货</option>
+        <option value="shipped">已发货</option>
+        <option value="cancelled">已取消</option>
+      </select>
+      <input type="text" id="filterSearch" placeholder="搜索玩家/物品..." oninput="filterOrders()" style="width:200px;">
+      <div class="spacer"></div>
+      <button class="btn" onclick="loadOrders()" style="padding:6px 14px;font-size:12px;">🔄 刷新</button>
+    </div>
+    <table class="order-table">
+      <thead><tr>
+        <th>时间</th><th>区服</th><th>收货玩家</th><th>物品</th><th>数量</th><th>平台</th><th>状态</th><th>操作</th>
+      </tr></thead>
+      <tbody id="orderTbody"></tbody>
+    </table>`;
+
+  document.getElementById('tab-orders').innerHTML = html;
+  renderOrderRows(orders);
+}
+
+function renderOrderRows(orders) {
+  const filter = document.getElementById('filterStatus')?.value || 'all';
+  const search = document.getElementById('filterSearch')?.value?.toLowerCase() || '';
+  let filtered = orders;
+  if (filter !== 'all') filtered = filtered.filter(o => o.status === filter);
+  if (search) filtered = filtered.filter(o =>
+    o.buyer.toLowerCase().includes(search) ||
+    o.item.toLowerCase().includes(search) ||
+    o.server.toLowerCase().includes(search)
+  );
+  if (filtered.length === 0) {
+    document.getElementById('orderTbody').innerHTML = '<tr><td colspan="8" class="empty-msg">暂无订单</td></tr>';
+    return;
+  }
+  document.getElementById('orderTbody').innerHTML = filtered.map(o => `
+    <tr>
+      <td><div>${new Date(o.createdAt).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div><div class="time-ago">${timeAgo(o.createdAt)}</div></td>
+      <td>${esc(o.server)}</td>
+      <td style="color:var(--gold-light);font-weight:600;">${esc(o.buyer)}</td>
+      <td>${esc(o.item)}</td>
+      <td style="font-weight:700;">${o.qty}</td>
+      <td style="font-size:12px;color:var(--text-dim);">${esc(o.platform)}</td>
+      <td><span class="status-badge status-${o.status}">${o.status==='pending'?'● 待发货':o.status==='shipped'?'● 已发货':'● 已取消'}</span></td>
+      <td>
+        ${o.status==='pending'?`<button class="btn btn-success" onclick="updateStatus('${o.id}','shipped')" style="padding:4px 10px;font-size:11px;">发货</button> <button class="btn btn-danger" onclick="updateStatus('${o.id}','cancelled')" style="padding:4px 10px;font-size:11px;">取消</button>`:''}
+        ${o.status==='shipped'?`<button class="btn btn-warning" onclick="updateStatus('${o.id}','pending')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
+        ${o.status==='cancelled'?`<button class="btn" onclick="updateStatus('${o.id}','pending')" style="padding:4px 10px;font-size:11px;">恢复</button>`:''}
+        <button class="btn btn-danger" onclick="deleteOrder('${o.id}')" style="padding:4px 10px;font-size:11px;">删除</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+async function updateStatus(id, status) {
+  try {
+    const res = await fetch(`/api/orders/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN, status })
+    });
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok) {
+      alert('操作失败: ' + (data.error || 'HTTP ' + res.status));
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    loadOrders();
+  } catch(e) { alert('网络错误: ' + e.message); }
+}
+
+async function deleteOrder(id) {
+  if (!confirm('确定删除此订单？')) return;
+  try {
+    const res = await fetch(`/api/orders/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN })
+    });
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok) {
+      alert('删除失败: ' + (data.error || 'HTTP ' + res.status));
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    loadOrders();
+  } catch(e) { alert('网络错误: ' + e.message); }
+}
+
+function filterOrders() {
+  fetch('/api/orders').then(r=>r.json()).then(data => renderOrderRows(data.orders||[]));
+}
+
+function showClearConfirm() { document.getElementById('clearModal').classList.add('show'); }
+function hideClearConfirm() { document.getElementById('clearModal').classList.remove('show'); }
+
+async function doClearAllOrders() {
+  const btn = document.getElementById('clearConfirmBtn');
+  btn.disabled = true; btn.textContent = '清空中...';
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN })
+    });
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok) {
+      alert('清空失败: ' + (data.error || 'HTTP ' + res.status));
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    hideClearConfirm(); loadOrders();
+  } catch(e) { alert('网络错误: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '确认清空'; }
+}
+
+async function exportExcel() {
+  const res = await fetch('/api/orders');
+  const data = await res.json();
+  const orders = data.orders || [];
+  if (orders.length === 0) { alert('暂无订单'); return; }
+  const headers = [['区服','收货玩家','物品ID','物品数量','平台版本']];
+  const rows = orders.filter(o=>o.status==='pending'||o.status==='shipped').map(o =>
+    [o.server, o.buyer, lookupItemId(o.item), o.qty, o.platform]
+  );
+  const ws = XLSX.utils.aoa_to_sheet(headers.concat(rows));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '订单记录');
+  XLSX.writeFile(wb, '小酥订单_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+/* ===== 补货功能 ===== */
+function initRestockForm() {
+  const sel = document.getElementById('restockServer');
+  sel.innerHTML = '<option value="">请选择区服</option>';
+  INVENTORY_DATA.forEach(sv => {
+    const opt = document.createElement('option');
+    opt.value = sv.server; opt.textContent = sv.server;
+    sel.appendChild(opt);
+  });
+  document.getElementById('restockItem').innerHTML = '<option value="">请先选择区服</option>';
+  document.getElementById('restockCurrent').textContent = '--';
+  document.getElementById('restockMsg').textContent = '';
+  document.getElementById('batchInput').value = '';
+  document.getElementById('batchResult').style.display = 'none';
+}
+
+function onRestockServerChange() {
+  const server = document.getElementById('restockServer').value;
+  const itemSel = document.getElementById('restockItem');
+  itemSel.innerHTML = '<option value="">请选择物品</option>';
+  document.getElementById('restockCurrent').textContent = '--';
+  if (!server) return;
+  const sv = INVENTORY_DATA.find(s => s.server === server);
+  if (!sv) return;
+  sv.items.forEach(cat => {
+    cat.list.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.n;
+      opt.textContent = item.n + '（当前:' + item.q + '）';
+      opt.dataset.qty = item.q;
+      itemSel.appendChild(opt);
+    });
+  });
+}
+
+function onRestockItemChange() {
+  const itemSel = document.getElementById('restockItem');
+  const opt = itemSel.selectedOptions[0];
+  document.getElementById('restockCurrent').textContent = opt && opt.dataset.qty ? opt.dataset.qty : '--';
+}
+
+async function doRestock() {
+  const server = document.getElementById('restockServer').value;
+  const item = document.getElementById('restockItem').value;
+  const qty = parseInt(document.getElementById('restockQty').value);
+  const msg = document.getElementById('restockMsg');
+  if (!server || !item || !qty || qty <= 0) {
+    msg.style.color = '#ff6688'; msg.textContent = '请完整填写区服、物品和数量'; return;
+  }
+  try {
+    const res = await fetch('/api/inventory/restock', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN, server, item, qty })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      msg.style.color = '#ff6688'; msg.textContent = (data.error || '操作失败');
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    msg.style.color = '#4ade80';
+    msg.textContent = '补货成功！' + server + ' 的「' + item + '」库存: ' + data.oldQty + ' → ' + data.newQty;
+    const invRes = await fetch('/api/inventory');
+    const invData = await invRes.json();
+    INVENTORY_DATA = invData.servers || [];
+    onRestockServerChange();
+    document.getElementById('restockCurrent').textContent = data.newQty;
+  } catch(e) {
+    msg.style.color = '#ff6688'; msg.textContent = '网络错误: ' + e.message;
+  }
+}
+
+async function doBatchRestock() {
+  const input = document.getElementById('batchInput').value.trim();
+  const resultBox = document.getElementById('batchResult');
+  if (!input) {
+    resultBox.className = 'result-box error';
+    resultBox.innerHTML = '请先粘贴补货数据';
+    resultBox.style.display = 'block'; return;
+  }
+  const lines = input.split('\n').filter(l => l.trim());
+  const items = []; const parseErrors = [];
+  lines.forEach((line, idx) => {
+    const parts = line.split(',').map(s => s.trim());
+    if (parts.length < 3) { parseErrors.push('第' + (idx+1) + '行格式错误: ' + line); return; }
+    const qty = parseInt(parts[2]);
+    if (isNaN(qty) || qty <= 0) { parseErrors.push('第' + (idx+1) + '行数量错误: ' + parts[2]); return; }
+    items.push({ server: parts[0], item: parts[1], qty });
+  });
+  if (parseErrors.length > 0) {
+    resultBox.className = 'result-box error';
+    resultBox.innerHTML = '数据解析失败:<br>' + parseErrors.map(e => '• ' + e).join('<br>');
+    resultBox.style.display = 'block'; return;
+  }
+  try {
+    const res = await fetch('/api/inventory/batch-restock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN, items })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      resultBox.className = 'result-box error';
+      resultBox.innerHTML = '批量补货失败: ' + (data.error || '未知错误');
+      resultBox.style.display = 'block';
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    const { success, failed, details } = data.result;
+    let html = '批量补货完成！成功 ' + success + ' 条，失败 ' + failed + ' 条<br><br>';
+    details.forEach(d => {
+      if (d.error) html += '<span style="color:#ff6688;">✗ ' + d.server + ' / ' + d.item + ': ' + d.error + '</span><br>';
+      else html += '<span style="color:#4ade80;">✔ ' + d.server + ' / ' + d.item + ': +' + d.qty + ' → ' + d.newQty + '</span><br>';
+    });
+    resultBox.className = 'result-box ' + (failed === 0 ? 'success' : 'error');
+    resultBox.innerHTML = html;
+    resultBox.style.display = 'block';
+    const invRes = await fetch('/api/inventory');
+    const invData = await invRes.json();
+    INVENTORY_DATA = invData.servers || [];
+  } catch(e) {
+    resultBox.className = 'result-box error';
+    resultBox.innerHTML = '网络错误: ' + e.message;
+    resultBox.style.display = 'block';
+  }
+}
+
+/* ===== 自动刷新（每30秒）===== */
+setInterval(() => {
+  if (TOKEN) {
+    const ordersTab = document.getElementById('tab-orders');
+    if (ordersTab && ordersTab.classList.contains('active')) loadOrders();
+  }
+}, 30000);
+
+/* ===== 文本导入存货 ===== */
+const IMPORT_CATEGORIES = ['背包','雪茄','大奖','小奖（本月）','小奖（历史）'];
+
+function _isImportServerName(line) {
+  if (line === '神龍界域' || line === '诸天万域') return true;
+  if (line.includes('==========')) return false;
+  if (line.includes('服') && line.length > 3 && !IMPORT_CATEGORIES.includes(line)) return true;
+  return false;
+}
+
+function _getImportGroup(name) {
+  if (name.includes('集结')) return '天使集结';
+  if (name.includes('周年')) return '天使周年';
+  if (name === '神龍界域') return '神龍界域';
+  if (name === '诸天万域') return '诸天万域';
+  if (name.includes('爆爽')) return '天使爆爽';
+  if (name.includes('万魂')) return '天使万魂';
+  if (name.includes('黄金')) return '天使黄金';
+  return '天使黄金';
+}
+
+function parseImportBlock(serverName, blockLines) {
+  const group = _getImportGroup(serverName);
+  const items = [];
+  let currentCat = null; let currentList = []; let i = 0;
+  while (i < blockLines.length) {
+    const line = blockLines[i];
+    if (IMPORT_CATEGORIES.includes(line)) {
+      if (currentCat) items.push({ cat: currentCat, list: currentList });
+      currentCat = line; currentList = []; i++; continue;
+    }
+    if (line === '暂无可展示商品' || line.includes('==========')) { i++; continue; }
+    const itemName = line; i++;
+    if (i >= blockLines.length) break;
+    const qty = parseInt(blockLines[i].trim());
+    if (isNaN(qty)) { i++; continue; }
+    if (!currentCat) currentCat = IMPORT_CATEGORIES[0];
+    currentList.push({ n: itemName, q: qty }); i++;
+  }
+  if (currentCat) items.push({ cat: currentCat, list: currentList });
+  if (items.length === 0) return null;
+  IMPORT_CATEGORIES.forEach(c => {
+    if (!items.find(x => x.cat === c)) items.push({ cat: c, list: [] });
+  });
+  const ordered = IMPORT_CATEGORIES.map(c => items.find(x => x.cat === c)).filter(Boolean);
+  return { server: serverName, group, items: ordered };
+}
+
+function parseImportText() {
+  const text = document.getElementById('importTextInput').value;
+  if (!text.trim()) { alert('请先粘贴存货文本'); return; }
+  const servers = [];
+  if (text.includes('==========')) {
+    const blocks = text.split(/={3,}/).map(b => b.trim()).filter(b => b.length > 0);
+    blocks.forEach(block => {
+      const blockLines = block.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (blockLines.length === 0) return;
+      const serverName = blockLines[0];
+      if (!_isImportServerName(serverName)) return;
+      const result = parseImportBlock(serverName, blockLines.slice(1));
+      if (result) servers.push(result);
+    });
+  } else {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    let i = 0;
+    while (i < lines.length) {
+      if (!_isImportServerName(lines[i])) { i++; continue; }
+      const serverName = lines[i]; const block = []; i++;
+      while (i < lines.length && !_isImportServerName(lines[i])) { block.push(lines[i]); i++; }
+      const result = parseImportBlock(serverName, block);
+      if (result) servers.push(result);
+    }
+  }
+  window._importParsed = servers;
+  renderImportPreview(servers);
+}
+
+function renderImportPreview(servers) {
+  const container = document.getElementById('importPreview');
+  const btn = document.getElementById('confirmImportBtn');
+  if (servers.length === 0) {
+    container.innerHTML = '<p style="color:#ff6688;">未检测到区服，请检查格式</p>';
+    btn.style.display = 'none'; return;
+  }
+  let totalItems = 0;
+  servers.forEach(s => s.items.forEach(c => totalItems += c.list.length));
+  let html = '<p style="color:var(--gold-light);margin-bottom:12px;">✔ 检测到 ' + servers.length + ' 个区服，共 ' + totalItems + ' 个物品</p>';
+  html += '<div style="max-height:400px;overflow-y:auto;border:1px solid var(--border);padding:12px;border-radius:10px;">';
+  servers.forEach((s, idx) => {
+    const itemCount = s.items.reduce((sum, c) => sum + c.list.length, 0);
+    html += '<div style="margin-bottom:10px;padding:8px;background:rgba(200,151,58,0.05);border-radius:8px;">';
+    html += '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">';
+    html += '<input type="checkbox" class="import-server-cb" data-idx="' + idx + '" checked> ';
+    html += '<span style="color:var(--gold-light);font-weight:bold;">' + s.server + '</span> ';
+    html += '<span style="color:var(--text-dim);">[' + s.group + ']</span> ';
+    html += '<span style="color:var(--text-dim);">' + itemCount + ' 个物品</span>';
+    html += '</label>';
+    html += '<div style="margin-left:24px;margin-top:4px;font-size:11px;color:var(--text-dim);">';
+    s.items.forEach(cat => {
+      html += '<span style="margin-right:10px;">' + cat.cat + ': ' + cat.list.length + '</span>';
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+  btn.style.display = 'inline-block';
+  document.getElementById('importMsg').textContent = '';
+}
+
+async function doImportText() {
+  const servers = window._importParsed || [];
+  const checked = Array.from(document.querySelectorAll('.import-server-cb:checked')).map(cb => parseInt(cb.dataset.idx));
+  const selected = checked.map(i => servers[i]).filter(Boolean);
+  if (selected.length === 0) { alert('请至少选择一个区服'); return; }
+  const btn = document.getElementById('confirmImportBtn');
+  const msg = document.getElementById('importMsg');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = '导入中...';
+  try {
+    const r = await fetch('/api/inventory/import-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN, servers: selected })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      msg.style.color = '#4ade80';
+      msg.textContent = '✔ 导入成功 ' + data.count + ' 个区服（新增:' + data.new + ', 更新:' + data.updated + '）';
+      document.getElementById('importTextInput').value = '';
+      document.getElementById('importPreview').innerHTML = '';
+      btn.style.display = 'none';
+      window._importParsed = null;
+    } else {
+      msg.style.color = '#ff6688';
+      msg.textContent = '导入失败: ' + (data.error || '未知错误');
+    }
+  } catch (e) {
+    msg.style.color = '#ff6688';
+    msg.textContent = '网络错误: ' + e.message;
+  } finally { btn.disabled = false; btn.textContent = oldText; }
+}
+</script>
+</body>
+</html>
