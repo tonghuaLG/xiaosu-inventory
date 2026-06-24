@@ -1,0 +1,1885 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小酥存货 - 斗罗道具点单</title>
+    <style>
+      /* 基础样式 */
+      :root {
+        --bg-body: #f3f4f6;
+        --bg-surface: #fff;
+        --bg-surface-secondary: #f9fafb;
+        --bg-hover: #f3f4f6;
+        --bg-active: #e5e7eb;
+        --text-primary: #111827;
+        --text-secondary: #4b5563;
+        --text-muted: #9ca3af;
+        --text-inverse: #fff;
+        --primary-color: #c8973a;
+        --primary-hover: #d4a849;
+        --primary-light: rgba(200, 151, 58, 0.08);
+        --primary-deep: #1e3a8a;
+        --accent-blue: #3b82f6;
+        --accent-blue-light: rgba(59, 130, 246, 0.08);
+        --gold: #c8973a;
+        --gold-light: #f1d98a;
+        --gold-gradient: linear-gradient(135deg, #f1c557 0%, #c8973a 100%);
+        --danger-color: #ef4444;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --border-color: #e5e7eb;
+        --border-hover: #d1d5db;
+        --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);
+        --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
+        --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,0.15);
+        --radius-sm: 0.5rem;
+        --radius-md: 0.75rem;
+        --radius-lg: 1rem;
+        --radius-xl: 1.5rem;
+        --radius-2xl: 2rem;
+        --radius-full: 9999px;
+        --font-sans: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        --ease: cubic-bezier(.25, .8, .25, 1);
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+      html, body, #app { min-height: 100%; margin: 0; }
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-body);
+        color: var(--text-primary);
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        line-height: 1.65;
+        min-height: 100vh;
+      }
+      button { cursor: pointer; background: 0 0; border: none; outline: none; font-family: inherit; }
+      input { outline: none; font-family: inherit; }
+      input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      button, input, select { font: inherit; }
+      button { background: 0 0; border: 0; outline: none; }
+      /* 桌面端布局：仿 7fen.vip */
+      .app-layout {
+        flex-direction: column;
+        min-height: 100vh;
+        display: flex;
+      }
+
+      /* 顶部导航（仿 7fen.vip navbar）*/
+      .navbar {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 100;
+        background-color: rgba(255, 255, 255, 0.92);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        justify-content: center;
+        align-items: center;
+        height: 72px;
+        transition: all 0.3s;
+        display: flex;
+        position: sticky;
+        top: 0;
+      }
+      .navbar-inner {
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        max-width: 1200px;
+        padding: 0 2rem;
+        display: flex;
+      }
+      .navbar-brand {
+        cursor: pointer;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 0.75rem;
+        transition: transform 0.2s;
+        display: flex;
+      }
+      .navbar-brand:hover { transform: scale(1.02); }
+      .brand-mark {
+        background: var(--gold-gradient);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 900;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(200, 151, 58, 0.35);
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        flex-shrink: 0;
+        font-family: 'STKaiti', 'KaiTi', serif;
+      }
+      .logo-text {
+        letter-spacing: -0.03em;
+        color: var(--text-primary);
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+        -webkit-text-fill-color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+        font-size: 1.5rem;
+        font-weight: 800;
+      }
+      .logo-sub {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+      .navbar-search {
+        flex: 1;
+        align-items: center;
+        min-width: 0;
+        max-width: 360px;
+        margin: 0 2rem;
+        display: flex;
+        position: relative;
+      }
+      .navbar-search i {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        transition: color 0.2s;
+        position: absolute;
+        left: 16px;
+      }
+      .navbar-search input {
+        background-color: var(--bg-surface-secondary);
+        border-radius: var(--radius-full);
+        width: 100%;
+        color: var(--text-primary);
+        border: 1px solid transparent;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s var(--ease);
+      }
+      .navbar-search input:focus {
+        background-color: var(--bg-surface);
+        box-shadow: var(--shadow-lg);
+        border-color: rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+      }
+      .navbar-search:focus-within i { color: var(--text-primary); }
+      .navbar-actions {
+        flex-shrink: 0;
+        align-items: center;
+        gap: 0.75rem;
+        display: flex;
+      }
+      .icon-btn {
+        border-radius: var(--radius-full);
+        width: 40px;
+        height: 40px;
+        color: var(--text-secondary);
+        background-color: transparent;
+        border: 1px solid transparent;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.3s var(--ease);
+        display: flex;
+        position: relative;
+        cursor: pointer;
+      }
+      .icon-btn:hover {
+        background-color: var(--bg-surface);
+        color: var(--text-primary);
+        box-shadow: var(--shadow-md);
+        border-color: var(--border-color);
+        transform: translateY(-2px);
+      }
+      .icon-btn.active {
+        background-color: var(--primary-color);
+        color: var(--text-inverse);
+        box-shadow: var(--shadow-lg);
+      }
+      .badge-count {
+        background-color: var(--danger-color);
+        color: #fff;
+        border: 2px solid var(--bg-body);
+        border-radius: 9px;
+        justify-content: center;
+        align-items: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        display: flex;
+        position: absolute;
+        top: -2px;
+        right: -2px;
+      }
+
+      /* 主页容器 */
+      .main-container {
+        flex-direction: column;
+        flex: 1;
+        display: flex;
+      }
+      .main-container.centered-layout {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+      }
+      .content-area {
+        flex-direction: column;
+        flex: 1;
+        padding: 3rem 0 5rem;
+        display: flex;
+      }
+
+      /* Hero 渐变标题（仿 7fen）*/
+      .hero-section {
+        text-align: center;
+        margin-bottom: 0.25rem;
+        animation: 1s var(--ease) fadeInDown;
+        position: relative;
+      }
+      .hero-section::before {
+        content: "";
+        background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%);
+        z-index: -1;
+        opacity: 0.5;
+        filter: blur(50px);
+        width: 240px;
+        height: 240px;
+        animation: 6s ease-in-out infinite pulse;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      @keyframes pulse {
+        0% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+        50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.3); }
+        100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+      }
+      .hero-section h1 {
+        letter-spacing: -0.04em;
+        color: var(--text-primary);
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+        -webkit-text-fill-color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+        font-size: clamp(2.25rem, 6vw, 3.25rem);
+        font-weight: 900;
+        line-height: 1.08;
+      }
+      .hero-section .highlight {
+        color: var(--primary-color);
+        -webkit-text-fill-color: var(--primary-color);
+        font-weight: 700;
+      }
+      .hero-lead {
+        color: var(--text-muted);
+        letter-spacing: -0.01em;
+        max-width: 36ch;
+        margin: 0 auto 2rem;
+        font-size: clamp(0.98rem, 2.5vw, 1.0625rem);
+        font-weight: 500;
+        line-height: 1.55;
+      }
+      @keyframes fadeInDown {
+        0% { opacity: 0; transform: translateY(-30px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeInUp {
+        0% { opacity: 0; transform: translateY(30px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+
+      /* 分类 chips */
+      .category-row {
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 0.625rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        animation: 1s var(--ease) 0.1s backwards fadeInUp;
+      }
+      .category-chip {
+        background-color: var(--bg-surface);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s var(--ease);
+      }
+      .category-chip:hover {
+        background-color: var(--bg-surface-secondary);
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-2px);
+      }
+      .category-chip.active {
+        background-color: var(--primary-color);
+        color: var(--text-inverse);
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-md);
+      }
+
+      /* 服务器网格（home）*/
+      .server-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.25rem;
+        display: grid;
+        animation: 1s var(--ease) 0.2s backwards fadeInUp;
+      }
+
+      /* 物品网格（server 详情）*/
+      .item-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.25rem;
+        display: grid;
+      }
+      @media (min-width: 1200px) {
+        .item-grid { grid-template-columns: repeat(3, 1fr); }
+      }
+
+      /* 卡片（仿 7fen card）*/
+      .card {
+        background-color: var(--bg-surface);
+        border-radius: var(--radius-xl);
+        cursor: pointer;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid transparent;
+        transition: all 0.4s var(--ease);
+        position: relative;
+        overflow: hidden;
+      }
+      .card:hover {
+        box-shadow: var(--shadow-2xl);
+        transform: translateY(-8px);
+      }
+
+      /* 服务器卡 */
+      .server-card .card-body {
+        text-align: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.5rem;
+        display: flex;
+      }
+      .server-card h3 {
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+      .badge-inv {
+        background-color: var(--bg-surface-secondary);
+        color: var(--text-secondary);
+        border-radius: var(--radius-full);
+        letter-spacing: 0.02em;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: inline-block;
+      }
+      .card:hover .badge-inv {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+      }
+
+      /* 物品卡（仿 7fen 横向）*/
+      .item-card {
+        background-color: var(--bg-surface);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        align-items: center;
+        gap: 1.25rem;
+        padding: 1.5rem;
+        display: flex;
+        transition: all 0.4s var(--ease);
+        position: relative;
+        overflow: hidden;
+      }
+      .item-card:hover {
+        box-shadow: var(--shadow-2xl);
+        transform: translateY(-4px);
+        border-color: var(--primary-light);
+      }
+      .item-card.in-cart {
+        border-color: var(--primary-color);
+        background-color: var(--bg-surface);
+        box-shadow: inset 0 0 0 1px var(--primary-color);
+      }
+      .item-icon {
+        background-color: var(--bg-surface-secondary);
+        border-radius: var(--radius-lg);
+        width: 56px;
+        height: 56px;
+        color: var(--text-secondary);
+        flex-shrink: 0;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        font-weight: 800;
+        transition: all 0.3s var(--ease);
+        display: flex;
+        background: var(--gold-gradient);
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(200, 151, 58, 0.25);
+      }
+      .item-card:hover .item-icon {
+        background: var(--primary-color);
+        transform: scale(1.08) rotate(3deg);
+      }
+      .item-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .item-header {
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.35rem;
+        display: flex;
+      }
+      .item-header h4 {
+        color: var(--text-primary);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        margin-right: 0.5rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.3;
+        overflow: hidden;
+      }
+      .item-stock {
+        color: var(--text-muted);
+        background-color: var(--bg-surface-secondary);
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+      .item-meta {
+        color: var(--text-secondary);
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.85rem;
+        display: flex;
+      }
+      .item-server-tag {
+        background-color: var(--bg-surface-secondary);
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+      .tag-sep {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        margin: 0 2px;
+      }
+      .item-cat-tag {
+        background-color: var(--accent-gold-light);
+        color: var(--accent-gold);
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+      .item-price {
+        color: var(--primary-color);
+        font-size: 1.15rem;
+        font-weight: 800;
+        margin-right: 0.5rem;
+      }
+
+      /* 数量控制（仿 7fen qty-control）*/
+      .qty-control {
+        background-color: var(--bg-surface);
+        border-radius: var(--radius-full);
+        border: 1px solid var(--border-color);
+        height: 36px;
+        box-shadow: var(--shadow-sm);
+        flex-shrink: 0;
+        align-items: center;
+        transition: box-shadow 0.2s;
+        display: flex;
+        overflow: hidden;
+      }
+      .qty-control:hover { box-shadow: var(--shadow-md); }
+      .qty-btn {
+        width: 32px;
+        height: 100%;
+        color: var(--text-secondary);
+        background: transparent;
+        border: 0;
+        justify-content: center;
+        align-items: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.1s;
+        display: flex;
+      }
+      .qty-btn:hover {
+        background-color: var(--bg-surface-secondary);
+        color: var(--primary-color);
+      }
+      .qty-btn:active { background-color: var(--bg-active); }
+      .qty-val {
+        text-align: center;
+        min-width: 28px;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      /* 模态（仿 7fen modal）*/
+      .modal-overlay {
+        z-index: 1000;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        background-color: rgba(0, 0, 0, 0.4);
+        justify-content: center;
+        align-items: center;
+        padding: 1.5rem;
+        display: flex;
+        position: fixed;
+        inset: 0;
+      }
+      .modal-card {
+        background-color: var(--bg-surface);
+        box-shadow: var(--shadow-2xl);
+        border-radius: var(--radius-2xl);
+        width: 100%;
+        max-width: 480px;
+        overflow: hidden;
+        animation: 0.4s var(--ease) modalIn;
+      }
+      @keyframes modalIn {
+        0% { opacity: 0; transform: scale(0.95) translateY(20px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      .modal-header {
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem 2rem 1rem;
+        display: flex;
+      }
+      .modal-header h3 {
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+        font-size: 1.5rem;
+        font-weight: 800;
+      }
+      .close-btn {
+        color: var(--text-muted);
+        background-color: var(--bg-surface-secondary);
+        border-radius: 50%;
+        justify-content: center;
+        align-items: center;
+        width: 36px;
+        height: 36px;
+        font-size: 1.5rem;
+        line-height: 1;
+        border: 0;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+      }
+      .close-btn:hover {
+        color: var(--text-primary);
+        background-color: rgba(0, 0, 0, 0.05);
+        transform: rotate(90deg);
+      }
+      .modal-body { padding: 0 2rem 2rem; }
+      .modal-desc {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      /* 按钮 */
+      .btn {
+        border-radius: var(--radius-lg);
+        padding: 0.875rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        transition: all 0.2s var(--ease);
+        cursor: pointer;
+        border: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      .btn:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+      .btn-block {
+        border-radius: var(--radius-xl);
+        background-color: var(--primary-color);
+        width: 100%;
+        color: var(--text-inverse);
+        padding: 1.125rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(200, 151, 58, 0.3);
+      }
+      .btn-block:hover {
+        background-color: var(--primary-hover);
+        box-shadow: 0 8px 24px rgba(200, 151, 58, 0.4);
+      }
+      .btn-secondary {
+        background-color: var(--bg-surface-secondary);
+        color: var(--text-primary);
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* 表单 */
+      .form-input {
+        border-radius: var(--radius-xl);
+        background-color: var(--bg-surface-secondary);
+        width: 100%;
+        color: var(--text-primary);
+        border: 2px solid transparent;
+        margin-bottom: 0;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.3s var(--ease);
+      }
+      .form-input:focus {
+        background-color: var(--bg-surface);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px var(--primary-light);
+      }
+
+      /* 状态徽章 */
+      .status-badge {
+        border-radius: var(--radius-full);
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        align-self: flex-start;
+        align-items: center;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.8rem;
+        font-weight: 800;
+        display: inline-flex;
+      }
+      .status-badge.confirmed { color: var(--success-color); background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); }
+      .status-badge.pending { color: var(--warning-color); background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35); }
+
+      /* 空/加载态 */
+      .empty-state {
+        text-align: center;
+        min-height: 280px;
+        color: var(--text-secondary);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.875rem;
+        padding: 3rem 1.25rem;
+        display: flex;
+      }
+      .empty-state p {
+        color: var(--text-muted);
+        font-size: 0.98rem;
+        font-weight: 500;
+      }
+      .empty-icon { font-size: 3rem; opacity: 0.45; color: var(--text-muted); }
+
+      /* 订单项 */
+      .order-history-item {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-bottom: 0.625rem;
+        transition: all 0.2s;
+      }
+      .order-history-item:hover { border-color: var(--primary-color); box-shadow: var(--shadow-sm); }
+      .order-row1 { display: flex; justify-content: space-between; align-items: center; }
+      .order-row2 { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 0.85rem; }
+      .order-items-list { color: var(--text-secondary); font-size: 0.875rem; line-height: 1.6; }
+      .order-total { color: var(--primary-color); font-size: 1.05rem; font-weight: 800; }
+
+      /* 购物车项 */
+      .cart-item {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 0.875rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        margin-bottom: 0.625rem;
+      }
+      .cart-item-info { flex: 1; min-width: 0; }
+      .cart-item-name { font-size: 0.95rem; font-weight: 700; }
+      .cart-item-price { color: var(--primary-color); font-size: 0.95rem; font-weight: 800; }
+      .cart-item-qty { color: var(--text-muted); font-size: 0.8rem; }
+      .cart-item-remove {
+        background: var(--bg-surface-secondary);
+        border: 0;
+        color: var(--text-muted);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cart-item-remove:hover { color: var(--danger-color); background: rgba(239, 68, 68, 0.08); }
+
+      /* 响应式 */
+      @media (max-width: 768px) {
+        .navbar { height: 64px; padding: 0 1rem; }
+        .navbar-inner { padding: 0; }
+        .logo-text { font-size: 1.25rem; }
+        .logo-sub { display: none; }
+        .navbar-search { margin: 0 0.5rem; }
+        .navbar-search input { padding: 0.6rem 1rem 0.6rem 2.25rem; }
+        .main-container.centered-layout { padding: 0 1.25rem; }
+        .content-area { padding: 1.5rem 0 2.5rem; }
+        .server-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        .item-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+        .server-card .card-body { padding: 1rem; }
+        .server-card h3 { font-size: 0.95rem; }
+        .item-card { gap: 0.75rem; padding: 1rem; }
+        .item-icon { width: 44px; height: 44px; font-size: 1.15rem; }
+      }
+
+      /* 品牌标识（斗罗H5蓝金点缀）*/
+      .brand-mark {
+        background: var(--gold-gradient);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 900;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(200, 151, 58, 0.35);
+        justify-content: center;
+        align-items: center;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        flex-shrink: 0;
+        font-family: 'STKaiti', 'KaiTi', serif;
+        letter-spacing: -0.05em;
+      }
+
+      /* 顶部导航 */
+      .topbar {
+        z-index: 10;
+        backdrop-filter: blur(14px);
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid var(--line-soft);
+        border-top: 2px solid var(--gold);
+        border-radius: 20px;
+        padding: 10px 12px;
+        position: sticky;
+        top: 0;
+        margin-bottom: 16px;
+      }
+      .topbar-inner {
+        align-items: center;
+        gap: 10px;
+        display: flex;
+      }
+      .server-pill {
+        border: 1px solid rgba(var(--accent-rgb), 0.14);
+        cursor: pointer;
+        background: #fff;
+        border-radius: 999px;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 4px;
+        min-height: 36px;
+        padding: 5px 14px 5px 10px;
+        display: flex;
+      }
+      .server-pill-name {
+        color: var(--text-main);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        max-width: 160px;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.2;
+        overflow: hidden;
+      }
+
+      /* 搜索栏 */
+      .search-bar {
+        background: #f4f6fb;
+        border: 1px solid var(--line-soft);
+        border-radius: 999px;
+        align-items: center;
+        height: 36px;
+        display: flex;
+        position: relative;
+        overflow: hidden;
+        flex: 1;
+        min-width: 0;
+        transition: border-color 0.15s, background 0.15s;
+      }
+      .search-bar:focus-within {
+        border-color: var(--line-gold);
+        background: #fff;
+      }
+      .search-bar input {
+        width: 100%;
+        height: 100%;
+        color: var(--text-main);
+        background: 0 0;
+        border: 0;
+        outline: none;
+        padding: 0 12px 0 34px;
+        font-size: 15px;
+      }
+      .search-icon {
+        color: #8e8e93;
+        pointer-events: none;
+        width: 16px;
+        height: 16px;
+        position: absolute;
+        left: 12px;
+      }
+
+      /* 分类导航 */
+      .category-nav {
+        scrollbar-width: none;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding-bottom: 2px;
+        display: flex;
+        overflow-x: auto;
+      }
+      .category-nav::-webkit-scrollbar { display: none; }
+      .category-tab {
+        color: #64748b;
+        white-space: nowrap;
+        cursor: pointer;
+        background: #fff;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 999px;
+        flex-shrink: 0;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        min-height: 34px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+      }
+      .category-tab.active {
+        border-color: var(--line-gold);
+        background: rgba(200, 151, 58, 0.08);
+        color: var(--gold);
+        font-weight: 800;
+      }
+
+      /* 商品卡片 */
+      .item-card {
+        background: #fff;
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--line-soft);
+        border-top: 2px solid var(--gold);
+        border-radius: 22px;
+        padding: 14px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+      }
+      .item-card:hover {
+        border-color: rgba(var(--accent-rgb), 0.28);
+        box-shadow: 0 14px 30px rgba(200, 151, 58, 0.18);
+        transform: translateY(-2px);
+      }
+      .item-card-header {
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        display: flex;
+      }
+      .item-card-title {
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.35;
+        margin: 0 0 4px 0;
+      }
+      .item-card-meta {
+        color: var(--text-sub);
+        font-size: 12px;
+        margin: 0;
+      }
+      .item-card-price {
+        color: var(--gold);
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        align-items: center;
+        gap: 4px;
+        display: inline-flex;
+      }
+      .item-card-stock {
+        color: var(--text-sub);
+        font-size: 11px;
+        margin-top: 4px;
+      }
+      .item-card-add-btn {
+        background: var(--gold-gradient);
+        color: #fff;
+        border: 0;
+        border-radius: 14px;
+        cursor: pointer;
+        min-width: 90px;
+        height: 38px;
+        padding: 0 15px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        box-shadow: 0 4px 10px rgba(200, 151, 58, 0.25);
+      }
+      .item-card-add-btn:hover {
+        background: rgba(var(--accent-rgb), 0.18);
+      }
+
+      /* 底部导航 */
+      .bottom-nav {
+        z-index: 20;
+        background: #fff;
+        border: 1px solid var(--line-soft);
+        border-top: 2px solid var(--gold);
+        border-radius: 24px 24px 18px 18px;
+        padding: 8px 12px;
+        display: flex;
+        position: fixed;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(min(100%, 430px) - 24px);
+        box-shadow: 0 12px 32px rgba(148, 163, 184, 0.18);
+      }
+      .nav-item {
+        flex: 1;
+        color: #64748b;
+        cursor: pointer;
+        background: 0 0;
+        border: 0;
+        border-radius: 16px;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 4px;
+        font-size: 10px;
+        font-weight: 700;
+        display: inline-flex;
+        transition: color 0.15s, background 0.15s;
+      }
+      .nav-item.active {
+        color: var(--gold);
+        background: rgba(200, 151, 58, 0.08);
+      }
+      .nav-icon {
+        width: 22px;
+        height: 22px;
+      }
+
+      /* 侧滑购物车 */
+      .cart-sheet-backdrop {
+        z-index: 35;
+        backdrop-filter: blur(1px);
+        background: rgba(15, 23, 42, 0.08);
+        justify-content: center;
+        align-items: flex-end;
+        padding: 18px;
+        transition: padding 0.24s, background-color 0.24s;
+        display: flex;
+        position: fixed;
+        inset: 0;
+      }
+      .cart-sheet {
+        background: var(--phone-bg);
+        border: 1px solid var(--line-soft);
+        transform-origin: bottom;
+        will-change: transform;
+        border-bottom: 0;
+        border-radius: 28px 28px 0 0;
+        width: min(100%, 430px);
+        max-height: min(82vh, 760px);
+        padding: 10px 16px 28px;
+        transition: max-height 0.24s, border-radius 0.24s, transform 0.2s;
+        overflow-y: auto;
+        box-shadow: 0 -12px 36px rgba(15, 23, 42, 0.16);
+      }
+      .cart-sheet-header {
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        display: flex;
+        margin-bottom: 16px;
+      }
+      .cart-sheet-title {
+        font-size: 18px;
+        font-weight: 800;
+        margin: 0;
+      }
+      .cart-item {
+        background: #fff;
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        border-radius: 18px;
+        padding: 12px;
+        margin-bottom: 10px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .cart-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .cart-item-name {
+        font-size: 14px;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+      }
+      .cart-item-price {
+        color: var(--gold);
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .cart-item-qty {
+        color: var(--text-sub);
+        font-size: 12px;
+      }
+      .cart-item-remove {
+        color: #64748b;
+        cursor: pointer;
+        background: 0 0;
+        border: 0;
+        font-size: 18px;
+        padding: 4px;
+      }
+
+      /* 订单记录 */
+      .order-card {
+        background: #fff;
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--line-soft);
+        border-radius: 22px;
+        padding: 15px;
+        margin-bottom: 12px;
+      }
+      .order-card-header {
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        display: flex;
+        margin-bottom: 8px;
+      }
+      .order-card-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .order-card-status {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+      .order-status-pending {
+        color: #b45309;
+        background: rgba(245, 158, 11, 0.14);
+      }
+      .order-status-shipped {
+        color: #047857;
+        background: rgba(16, 185, 129, 0.12);
+      }
+      .order-card-items {
+        color: var(--text-sub);
+        font-size: 12px;
+        margin: 4px 0;
+      }
+      .order-card-total {
+        color: var(--gold);
+        font-size: 16px;
+        font-weight: 800;
+        margin: 8px 0 0 0;
+      }
+
+
+      /* 筛选栏 */
+      .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background: #fff;
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+      }
+      .filter-bar label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+      #serverSelect {
+        padding: 8px 32px 8px 12px;
+        border: 1.5px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 12px;
+        transition: border-color 0.2s;
+        min-width: 160px;
+      }
+      #serverSelect:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px var(--primary-light);
+      }
+      .filter-bar .category-row {
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: none;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+      }
+      /* 响应式 */
+      @media (max-width: 480px) {
+        #app { padding: 0; }
+        .miniapp-page {
+          width: 100%;
+          min-height: 100vh;
+          box-shadow: none;
+          border-radius: 0;
+          padding: 16px 12px 128px;
+        }
+        .bottom-nav {
+          width: calc(100% - 24px);
+        }
+      }
+
+
+      /* ========== 首页：区服网格视图 ========== */
+      .home-view {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px 24px 80px;
+      }
+      .home-header {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .home-header h1 {
+        font-size: 28px;
+        font-weight: 900;
+        background: var(--gold-gradient);
+        -webkit-text-fill-color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+        margin-bottom: 6px;
+        letter-spacing: -0.02em;
+      }
+      .home-header p {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+      .server-group {
+        margin-bottom: 28px;
+      }
+      .server-group-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        padding: 6px 0 6px 12px;
+        border-left: 4px solid var(--primary-color);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .server-group-title .group-count {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+      .server-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      .server-card {
+        background: var(--bg-surface);
+        border: 1.5px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 18px 14px;
+        cursor: pointer;
+        transition: all 0.22s var(--ease);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+      .server-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gold-gradient);
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .server-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary-color);
+      }
+      .server-card:hover::before {
+        opacity: 1;
+      }
+      .server-card .server-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+        line-height: 1.4;
+        word-break: keep-all;
+      }
+      .server-card .server-count {
+        display: inline-block;
+        padding: 3px 10px;
+        background: var(--primary-light);
+        color: var(--primary-color);
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      @media (max-width: 640px) {
+        .server-grid {
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+          gap: 8px;
+        }
+        .server-card { padding: 14px 8px; }
+        .server-card .server-name { font-size: 13px; }
+        .home-view { padding: 16px 12px 80px; }
+        .home-header h1 { font-size: 22px; }
+      }
+
+      /* ========== 区服详情视图顶部条 ========== */
+      .server-view-header {
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        position: sticky;
+        top: 72px;
+        z-index: 50;
+      }
+      .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        background: var(--bg-surface-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .back-btn:hover {
+        background: var(--primary-light);
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+        transform: translateX(-2px);
+      }
+      .current-server-label {
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--text-primary);
+      }
+      .current-server-label .item-count-mini {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-left: 6px;
+      }
+      @media (max-width: 640px) {
+        .server-view-header { padding: 10px 12px; top: 64px; }
+        .current-server-label { font-size: 14px; }
+      }
+
+      /* 工具类 */
+      .text-center { text-align: center; }
+      .mt-16 { margin-top: 16px; }
+      .mb-16 { margin-bottom: 16px; }
+    </style>
+  
+  <body>
+    <div id="app" class="app-layout">
+      <!-- 顶部导航（仿 7fen） -->
+      <nav class="navbar">
+        <div class="navbar-inner">
+          <div class="navbar-brand" onclick="resetFilters()">
+            <div class="brand-mark">酥</div>
+            <div>
+              <div class="logo-text">小酥道具</div>
+              <div class="logo-sub">斗罗大陆 H5 · 点单系统</div>
+            </div>
+          </div>
+          <div class="navbar-search">
+            <i>🔍</i>
+            <input type="search" id="searchInput" placeholder="搜索道具 / 服务器..." />
+          </div>
+          <div class="navbar-actions">
+            <button class="icon-btn" onclick="openCart()" title="购物车" id="cartBtn">
+              🛒
+              <span class="badge-count" id="cartBadge" style="display: none;">0</span>
+            </button>
+            <button class="icon-btn" onclick="openOrders()" title="我的订单" id="ordersBtn">
+              📋
+            </button>
+            <button class="icon-btn" onclick="resetFilters()" title="首页">
+              🏠
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- 主内容：两个视图切换 -->
+      <div class="main-container centered-layout" style="width:100%;max-width:1200px;margin:0 auto;">
+
+        <!-- 视图A：区服网格（首页） -->
+        <div id="homeView" class="home-view">
+          <div class="home-header">
+            <h1>选择区服</h1>
+            <p>共 <span id="totalServerCount">0</span> 个区服，<span id="totalItemCount">0</span> 件道具</p>
+          </div>
+          <div id="serverGridContainer">
+            <div class="empty-state"><div class="empty-icon">⏳</div><p>加载中...</p></div>
+          </div>
+        </div>
+
+        <!-- 视图B：物品列表（进入区服后） -->
+        <div id="serverView" style="display:none;">
+          <div class="server-view-header">
+            <button class="back-btn" onclick="goHome()">← 返回区服列表</button>
+            <div class="current-server-label">
+              <span id="currentServerName">-</span>
+              <span class="item-count-mini" id="currentServerItemCount"></span>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="category-row" id="categoryRow">
+              <div class="category-chip active" data-cat="">全部分类</div>
+            </div>
+          </div>
+          <div id="itemGridView" class="content-area">
+            <div id="itemGrid" class="item-grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 购物车模态 -->
+    <div id="cartModal" class="modal-overlay" style="display: none;" onclick="if(event.target===this) closeCart()">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>购物车</h3>
+          <button class="close-btn" onclick="closeCart()">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="cartItems"></div>
+          <div id="cartFooter" style="display: none; margin-top: 1.5rem;">
+            <div style="margin-bottom: 0.75rem;">
+              <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;font-weight:600;">买家称呼（必填）</label>
+              <input type="text" id="buyerName" placeholder="如：老王、玩家123" maxlength="20"
+                style="width:100%;padding:0.6rem 0.75rem;border:1.5px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--bg-surface-secondary);" />
+            </div>
+            <div class="order-row1" style="margin-bottom: 1rem;">
+              <span style="font-weight: 700;">合计</span>
+              <span class="order-total" id="cartTotal">￥0</span>
+            </div>
+            <button class="btn btn-block" onclick="checkout()">提交订单</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 订单模态 -->
+    <div id="ordersModal" class="modal-overlay" style="display: none;" onclick="if(event.target===this) closeOrders()">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>我的订单</h3>
+          <button class="close-btn" onclick="closeOrders()">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-desc">请输入订单 ID 查询您的订单：</p>
+          <input type="text" class="form-input" id="orderSearchInput" placeholder="输入订单号 (如 ORD-123)" style="margin-bottom: 1rem;" />
+          <button class="btn btn-block" onclick="searchOrder()">查询</button>
+          <div id="orderResult" style="margin-top: 1.5rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 道具详情模态 -->
+    <div id="itemDetailModal" class="modal-overlay" style="display: none;" onclick="if(event.target===this) closeItemDetail()">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="itemDetailTitle">道具详情</h3>
+          <button class="close-btn" onclick="closeItemDetail()">×</button>
+        </div>
+        <div class="modal-body" id="itemDetailBody"></div>
+      </div>
+    </div>
+
+
+    <script>
+      // 全局状态（方案B：下拉框筛选服务器）
+      let allItems = [];
+      let allServers = [];
+      let currentServer = '';       // '' = 未选择
+      let currentCategory = '';      // '' = 全部分类
+      let cart = [];
+      let lastOrderId = '';
+
+      document.addEventListener('DOMContentLoaded', function() {
+        loadInventory();
+        setupSearch();
+      });
+
+      async function loadInventory() {
+        try {
+          const response = await fetch('/api/inventory');
+          const data = await response.json();
+          allItems = flattenInventory(data.servers || []);
+          allServers = data.servers || [];
+          renderHomeView();
+        } catch (error) {
+          console.error('Failed to load inventory:', error);
+          document.getElementById('itemGrid').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>加载失败，请刷新重试</p></div>';
+        }
+      }
+
+      function flattenInventory(servers) {
+        const items = [];
+        servers.forEach(sv => {
+          if (!sv.items || !Array.isArray(sv.items)) return;
+          sv.items.forEach(cat => {
+            if (!cat.list || !Array.isArray(cat.list)) return;
+            cat.list.forEach((it, idx) => {
+              if (!it || !it.n) return;
+              items.push({
+                id: `${sv.server}__${cat.cat || cat.category || '未分类'}__${idx}__${it.n}`,
+                name: it.n,
+                server: sv.server,
+                category: cat.cat || cat.category || '未分类',
+                price: it.p || 0,
+                stock: it.q || 0
+              });
+            });
+          });
+        });
+        return items;
+      }
+
+      // === 视图切换：首页（服务器网格） / 区服详情 ===
+      const GROUP_ORDER = ['黄金', '黄金爆爽', '爆爽', '集结', '周年', '万魂', '神龍界域', '诸天万域'];
+      const OTHER_GROUP = '其他';
+
+      function getServerGroup(serverName) {
+        if (!serverName) return OTHER_GROUP;
+        if (serverName.includes('·')) return serverName.split('·')[0];
+        return serverName;
+      }
+
+      function countServerItems(sv) {
+        if (!sv.items || !Array.isArray(sv.items)) return 0;
+        return sv.items.reduce((sum, cat) => sum + ((cat.list || []).length), 0);
+      }
+
+      function renderHomeView() {
+        const container = document.getElementById('serverGridContainer');
+        const keyword = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+        let servers = allServers;
+        if (keyword) servers = servers.filter(sv => sv.server.toLowerCase().includes(keyword));
+
+        // 统计总数
+        const totalSrv = allServers.length;
+        const totalItems = allItems.length;
+        document.getElementById('totalServerCount').textContent = totalSrv;
+        document.getElementById('totalItemCount').textContent = totalItems;
+
+        if (servers.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到匹配的区服</p></div>';
+          return;
+        }
+
+        // 分组
+        const groups = {};
+        servers.forEach(sv => {
+          const g = getServerGroup(sv.server);
+          if (!groups[g]) groups[g] = [];
+          groups[g].push(sv);
+        });
+
+        // 按指定顺序排序
+        const orderedKeys = Object.keys(groups).sort((a, b) => {
+          const ai = GROUP_ORDER.indexOf(a);
+          const bi = GROUP_ORDER.indexOf(b);
+          if (ai === -1 && bi === -1) return a.localeCompare(b);
+          if (ai === -1) return 1;
+          if (bi === -1) return -1;
+          return ai - bi;
+        });
+
+        container.innerHTML = orderedKeys.map(g => {
+          const list = groups[g].slice().sort((a, b) => a.server.localeCompare(b.server, 'zh-Hans-CN'));
+          return `
+            <div class="server-group">
+              <div class="server-group-title">
+                <span>${g}</span>
+                <span class="group-count">${list.length} 个区服</span>
+              </div>
+              <div class="server-grid">
+                ${list.map(sv => `
+                  <div class="server-card" onclick="openServer('${sv.server.replace(/'/g, "\\'")}')">
+                    <div class="server-name">${sv.server}</div>
+                    <span class="server-count">${countServerItems(sv)} 件</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function openServer(serverName) {
+        currentServer = serverName;
+        currentCategory = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('homeView').style.display = 'none';
+        document.getElementById('serverView').style.display = 'block';
+        document.getElementById('currentServerName').textContent = serverName;
+        const items = allItems.filter(i => i.server === serverName);
+        document.getElementById('currentServerItemCount').textContent = '· ' + items.length + ' 件';
+        renderCategoryChips();
+        renderItemGrid();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function goHome() {
+        currentServer = '';
+        currentCategory = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('serverView').style.display = 'none';
+        document.getElementById('homeView').style.display = 'block';
+        renderHomeView();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function renderCategoryChips() {
+        let items = allItems;
+        if (currentServer) items = items.filter(i => i.server === currentServer);
+        if (items.length === 0) {
+          const row = document.getElementById('categoryRow');
+          if (row) row.innerHTML = '<div class="category-chip active" data-cat="">全部分类</div>';
+          return;
+        }
+        const cats = [...new Set(items.map(i => i.category).filter(Boolean))];
+        const row = document.getElementById('categoryRow');
+        row.innerHTML = `<div class="category-chip${!currentCategory ? ' active' : ''}" data-cat="">全部分类</div>` +
+          cats.map(c => `<div class="category-chip${currentCategory === c ? ' active' : ''}" data-cat="${c}">${c}</div>`).join('');
+        row.querySelectorAll('.category-chip').forEach(chip => {
+          chip.onclick = function() {
+            currentCategory = this.dataset.cat;
+            renderCategoryChips();
+            renderItemGrid();
+          };
+        });
+      }
+
+      function renderItemGrid() {
+        const grid = document.getElementById('itemGrid');
+        if (!currentServer) {
+          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🎮</div><p>请返回区服列表选择一个区服</p></div>';
+          return;
+        }
+        let items = allItems;
+        items = items.filter(i => i.server === currentServer);
+        if (currentCategory) items = items.filter(i => i.category === currentCategory);
+        const keyword = (document.getElementById('searchInput').value || '').toLowerCase();
+        if (keyword) items = items.filter(i => i.name.toLowerCase().includes(keyword) || i.server.toLowerCase().includes(keyword) || i.category.toLowerCase().includes(keyword));
+        if (items.length === 0) {
+          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><p>该区服暂无道具</p></div>';
+          return;
+        }
+        grid.innerHTML = items.map(item => {
+          const inCart = cart.find(c => c.id === item.id);
+          const initial = item.name.charAt(0);
+          return `
+            <div class="item-card${inCart ? ' in-cart' : ''}" data-id="${item.id}" onclick="openItemDetail('${item.id}')">
+              <div class="item-icon">${initial}</div>
+              <div class="item-info">
+                <div class="item-header">
+                  <h4>${item.name}</h4>
+                  <span class="item-stock">库存 ${item.stock}</span>
+                </div>
+                <div class="item-meta">
+                  <span class="item-server-tag">${item.server}</span><span class="tag-sep"> / </span><span class="item-cat-tag">${item.category}</span>
+                  <span class="item-price">￥${item.price}</span>
+                </div>
+              </div>
+              ${inCart
+                ? `<div class="qty-control">
+                    <button class="qty-btn" onclick="event.stopPropagation(); decItem('${item.id}')">−</button>
+                    <span class="qty-val">${inCart.qty}</span>
+                    <button class="qty-btn" onclick="event.stopPropagation(); incItem('${item.id}')">+</button>
+                  </div>`
+                : `<button class="qty-control" style="padding: 0 16px; font-weight: 700; color: var(--primary-color);" onclick="event.stopPropagation(); addToCart('${item.id}')">+ 加入</button>`
+              }
+            </div>
+          `;
+        }).join('');
+      }
+
+      function openItemDetail(itemId) {
+        const item = allItems.find(i => i.id === itemId);
+        if (!item) return;
+        const initial = item.name.charAt(0);
+        document.getElementById('itemDetailTitle').innerHTML =
+          '<span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--primary-color);color:#fff;font-weight:800;margin-right:0.5rem;vertical-align:middle;">' + initial + '</span>' + item.name;
+        document.getElementById('itemDetailBody').innerHTML = `
+          <div style="padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;margin-bottom:0.5rem;">
+            <div style="font-size:0.85rem;color:var(--text-secondary);">区服</div>
+            <div style="font-size:1.1rem;font-weight:700;">${item.server}</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;margin-bottom:0.5rem;">
+            <div style="flex:1;padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;">
+              <div style="font-size:0.85rem;color:var(--text-secondary);">分类</div>
+              <div style="font-size:1.1rem;font-weight:700;">${item.category}</div>
+            </div>
+            <div style="flex:1;padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;">
+              <div style="font-size:0.85rem;color:var(--text-secondary);">库存</div>
+              <div style="font-size:1.1rem;font-weight:800;color:var(--primary-color);">${item.stock}</div>
+            </div>
+          </div>
+          <div style="padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;margin-bottom:0.5rem;">
+            <div style="font-size:0.85rem;color:var(--text-secondary);">单价</div>
+            <div style="font-size:1.5rem;font-weight:800;color:var(--primary-color);">￥${item.price}</div>
+          </div>
+          <button class="btn btn-block" style="margin-top:0.5rem;" onclick="addToCart('${item.id}'); closeItemDetail();">加入购物车</button>
+        `;
+        document.getElementById('itemDetailModal').style.display = 'flex';
+      }
+      function closeItemDetail() {
+        document.getElementById('itemDetailModal').style.display = 'none';
+      }
+
+      function addToCart(itemId) {
+        const item = allItems.find(i => i.id === itemId);
+        if (!item) return;
+        if (cart.find(c => c.id === itemId)) { incItem(itemId); return; }
+        cart.push({ ...item, qty: 1 });
+        updateCartBadge();
+        renderItemGrid();
+        renderCart();
+      }
+      function incItem(itemId) {
+        const c = cart.find(c => c.id === itemId);
+        if (!c) return;
+        if (c.qty >= c.stock) { alert('库存不足'); return; }
+        c.qty++;
+        updateCartBadge();
+        renderItemGrid();
+        renderCart();
+      }
+      function decItem(itemId) {
+        const c = cart.find(c => c.id === itemId);
+        if (!c) return;
+        c.qty--;
+        if (c.qty <= 0) cart = cart.filter(x => x.id !== itemId);
+        updateCartBadge();
+        renderItemGrid();
+        renderCart();
+      }
+      function removeFromCart(itemId) {
+        cart = cart.filter(c => c.id !== itemId);
+        updateCartBadge();
+        renderItemGrid();
+        renderCart();
+      }
+
+      function updateCartBadge() {
+        const total = cart.reduce((s, c) => s + c.qty, 0);
+        const badge = document.getElementById('cartBadge');
+        if (total > 0) { badge.style.display = 'flex'; badge.textContent = total; }
+        else { badge.style.display = 'none'; }
+      }
+
+      function openCart() { renderCart(); document.getElementById('cartModal').style.display = 'flex'; document.getElementById('buyerName').value = ''; }
+      function closeCart() { document.getElementById('cartModal').style.display = 'none'; }
+      function renderCart() {
+        const container = document.getElementById('cartItems');
+        const footer = document.getElementById('cartFooter');
+        if (cart.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div><p>购物车为空</p></div>';
+          footer.style.display = 'none';
+          return;
+        }
+        container.innerHTML = cart.map(item => `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${item.name}</div>
+              <div class="cart-item-price">￥${item.price} × ${item.qty} = ￥${item.price * item.qty}</div>
+              <div class="cart-item-qty">${item.server} · ${item.category}</div>
+            </div>
+            <button class="cart-item-remove" onclick="removeFromCart('${item.id}')">×</button>
+          </div>
+        `).join('');
+        footer.style.display = '';
+        const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
+        document.getElementById('cartTotal').textContent = `￥${total}`;
+      }
+
+      async function checkout() {
+        if (cart.length === 0) { alert('购物车为空'); return; }
+        const buyer = (document.getElementById('buyerName').value || '').trim();
+        if (!buyer) { alert('请填写买家称呼'); return; }
+        // 拆单：购物车每个物品作为一个独立订单
+        const platform = '天使黄金';
+        const orderIds = [];
+        const failed = [];
+        for (const item of cart) {
+          const order = {
+            server: item.server,
+            buyer: buyer,
+            item: item.name,
+            qty: item.qty,
+            platform: platform,
+            category: item.category || ''
+          };
+          try {
+            const response = await fetch('/api/orders', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(order),
+            });
+            const result = await response.json();
+            if (response.ok) {
+              orderIds.push(result.order?.id || result.id || '');
+            } else {
+              failed.push(item.name + '：' + (result.error || '未知错误'));
+            }
+          } catch (e) {
+            failed.push(item.name + '：网络错误');
+          }
+        }
+        if (orderIds.length > 0) {
+          lastOrderId = orderIds.join(', ');
+          const msg = '下单成功！共 ' + orderIds.length + ' 笔订单' +
+            (failed.length > 0 ? '\n失败 ' + failed.length + ' 笔：' + failed.join('；') : '') +
+            '\n订单号：' + lastOrderId + '\n请妥善保存订单号以便查询';
+          alert(msg);
+          cart = [];
+          document.getElementById('buyerName').value = '';
+          updateCartBadge();
+          renderCart();
+          renderItemGrid();
+          closeCart();
+          // 刷新库存显示（后端已扣减）
+          if (typeof loadInventory === 'function') loadInventory();
+        } else {
+          alert('全部下单失败：\n' + failed.join('\n'));
+        }
+      }
+
+      function openOrders() {
+        document.getElementById('ordersModal').style.display = 'flex';
+        document.getElementById('orderResult').innerHTML = '';
+        document.getElementById('orderSearchInput').value = lastOrderId;
+      }
+      function closeOrders() { document.getElementById('ordersModal').style.display = 'none'; }
+      async function searchOrder() {
+        const id = document.getElementById('orderSearchInput').value.trim();
+        if (!id) { alert('请输入订单号'); return; }
+        try {
+          const response = await fetch('/api/orders');
+          const data = await response.json();
+          const order = (data.orders || []).find(o => (o.id || o._id) == id);
+          const result = document.getElementById('orderResult');
+          if (!order) { result.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到该订单</p></div>'; return; }
+          const statusMap = { pending: '待发货', confirmed: '已发货', shipped: '已发货' };
+          const statusKey = (order.status || 'pending');
+          result.innerHTML = `
+            <div class="order-history-item">
+              <div class="order-row1">
+                <strong>订单 ${order.id || order._id}</strong>
+                <span class="status-badge ${statusKey === 'pending' ? 'pending' : 'confirmed'}">${statusMap[statusKey] || statusKey}</span>
+              </div>
+              <div class="order-items-list">${(order.items || []).map(i => i.name + ' × ' + i.qty).join('<br>')}</div>
+              <div class="order-row2">
+                <span>${order.createdAt ? new Date(order.createdAt).toLocaleString('zh-CN') : ''}</span>
+                <span class="order-total">合计 ￥${order.total || 0}</span>
+              </div>
+            </div>
+          `;
+        } catch (e) { alert('查询失败：' + e.message); }
+      }
+
+      function resetFilters() { goHome(); }
+
+      function setupSearch() {
+        document.getElementById('searchInput').addEventListener('input', function() {
+          if (currentServer) renderItemGrid();
+          else renderHomeView();
+        });
+      }
+    </script>
+
+    </body>
+
+  </body>
+</html>
