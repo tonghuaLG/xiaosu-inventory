@@ -229,6 +229,18 @@ app.delete('/api/orders/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// 清空所有订单（管理员）
+app.delete('/api/orders', (req, res) => {
+  const { password } = req.body;
+  if (password !== ADMIN_PASS) return res.status(403).json({ error: '密码错误' });
+  const db = loadDB();
+  const count = (db.orders || []).length;
+  db.orders = [];
+  saveDB(db);
+  console.log(`[订单] 清空所有订单，共 ${count} 条`);
+  res.json({ ok: true, count });
+});
+
 // 导出订单为 Excel 数据（管理员）
 app.post('/api/orders/export', (req, res) => {
   const { password } = req.body;

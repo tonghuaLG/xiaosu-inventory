@@ -90,6 +90,23 @@ body::before {
 .toolbar select:focus, .toolbar input:focus { border-color: #ff00ff; }
 .toolbar .spacer { flex: 1; }
 
+/* 确认弹窗 */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: #0a0e1a; border: 1px solid rgba(255,68,102,0.4);
+  border-radius: 16px; padding: 32px; max-width: 380px; width: 90%;
+  text-align: center; box-shadow: 0 0 40px rgba(255,68,102,0.15);
+}
+.modal-box .modal-icon { font-size: 48px; margin-bottom: 16px; }
+.modal-box h3 { color: #ff6688; font-size: 18px; margin-bottom: 10px; }
+.modal-box p { color: rgba(200,214,229,0.7); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+.modal-box .modal-btns { display: flex; gap: 12px; justify-content: center; }
+.modal-box .modal-btns .btn { padding: 10px 28px; font-size: 14px; }
+
 /* 订单表 */
 .order-table {
   width: 100%; border-collapse: collapse; font-size: 13px;
@@ -328,6 +345,7 @@ function renderOrders(orders) {
       <div class="stat"><div class="num">${cancelled.length}</div><div class="label">已取消</div></div>
     </div>
     <div class="toolbar">
+      <button class="btn danger" onclick="showClearConfirm()" style="padding:6px 14px;font-size:12px;">🗑 清空所有订单</button>
       <select id="filterStatus" onchange="filterOrders()">
         <option value="all">全部状态</option>
         <option value="pending" selected>待发货</option>
@@ -430,6 +448,39 @@ async function deleteOrder(id) {
 
 function filterOrders() {
   fetch('/api/orders').then(r=>r.json()).then(data => renderOrderRows(data.orders||[]));
+}
+
+function showClearConfirm() {
+  document.getElementById('clearModal').classList.add('show');
+}
+function hideClearConfirm() {
+  document.getElementById('clearModal').classList.remove('show');
+}
+async function doClearAllOrders() {
+  const btn = document.getElementById('clearConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 清空中...';
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: TOKEN })
+    });
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok) {
+      alert('清空失败: ' + (data.error || `HTTP ${res.status}`));
+      if (res.status === 403) { TOKEN = ''; location.reload(); }
+      return;
+    }
+    hideClearConfirm();
+    loadOrders();
+  } catch(e) {
+    alert('网络错误: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '确定清空';
+  }
 }
 
 async function exportExcel() {
@@ -612,5 +663,18 @@ setInterval(() => {
   }
 }, 30000);
 </script>
+<!-- 清空订单确认弹窗 -->
+<div class="modal-overlay" id="clearModal">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <h3>确定清空所有订单？</h3>
+    <p>此操作将永久删除全部订单记录，<br>包括待发货、已发货、已取消的订单。<br>此操作不可撤销！</p>
+    <div class="modal-btns">
+      <button class="btn" onclick="hideClearConfirm()">取消</button>
+      <button class="btn danger" id="clearConfirmBtn" onclick="doClearAllOrders()">确定清空</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
