@@ -84,6 +84,8 @@ body::before {
   box-shadow: 0 0 16px rgba(200,151,58,0.3);
 }
 .btn-success { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.1); }
+.btn-primary { border-color: #60a5fa; color: #60a5fa; background: rgba(96,165,250,0.1); }
+.btn-primary:hover { background: rgba(96,165,250,0.25); color: #fff; }
 .btn-success:hover { background: rgba(74,222,128,0.25); color: #fff; }
 .btn-danger { border-color: #ff4466; color: #ff6688; background: rgba(255,68,102,0.1); }
 .btn-danger:hover { background: rgba(255,68,102,0.25); color: #fff; }
@@ -178,8 +180,10 @@ body::before {
   display: inline-block; padding: 3px 10px; border-radius: 10px;
   font-size: 11px; font-weight: 600;
 }
+.paid-stat { color: #60a5fa; background: rgba(96,165,250,0.12); border: 1px solid rgba(96,165,250,0.3); }
 .status-pending { background: rgba(255,165,0,0.15); color: #ffa500; border: 1px solid rgba(255,165,0,0.3); }
 .status-shipped { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+.status-paid { background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
 .status-cancelled { background: rgba(255,68,102,0.15); color: #ff6688; border: 1px solid rgba(255,68,102,0.3); }
 .empty-msg { text-align: center; padding: 40px; color: var(--text-dim); font-style: italic; }
 .time-ago { font-size: 11px; color: rgba(255,215,0,0.35); }
@@ -463,14 +467,14 @@ async function loadOrders() {
 function renderOrders(orders) {
   const unpaid = orders.filter(o => o.status === 'unpaid');
   const paid = orders.filter(o => o.status === 'paid');
-  const pending = orders.filter(o => o.status === 'unpaid');
   const shipped = orders.filter(o => o.status === 'shipped');
   const cancelled = orders.filter(o => o.status === 'cancelled');
 
   let html = `
     <div class="stats">
       <div class="stat"><div class="num">${orders.length}</div><div class="label">总订单</div></div>
-      <div class="stat pending"><div class="num">${pending.length}</div><div class="label">待发货</div></div>
+      <div class="stat pending"><div class="num">${unpaid.length}</div><div class="label">待付款</div></div>
+      <div class="stat paid-stat"><div class="num">${paid.length}</div><div class="label">已付款</div></div>
       <div class="stat shipped"><div class="num">${shipped.length}</div><div class="label">已发货</div></div>
       <div class="stat"><div class="num">${cancelled.length}</div><div class="label">已取消</div></div>
     </div>
@@ -478,7 +482,8 @@ function renderOrders(orders) {
       <button class="btn btn-danger" onclick="showClearConfirm()" style="padding:6px 14px;font-size:12px;">🗑️ 清空所有订单</button>
       <select id="filterStatus" onchange="filterOrders()">
         <option value="all">全部状态</option>
-        <option value="pending" selected>待发货</option>
+        <option value="unpaid">待付款</option>
+        <option value="paid">已付款</option>
         <option value="shipped">已发货</option>
         <option value="cancelled">已取消</option>
       </select>
@@ -519,10 +524,12 @@ function renderOrderRows(orders) {
       <td>${esc(o.item)}</td>
       <td style="font-weight:700;">${o.qty}</td>
       <td style="font-size:12px;color:var(--text-dim);">${esc(o.platform)}</td>
-      <td><span class="status-badge status-${o.status}">${o.status==='unpaid'?'● 待付款':o.status==='shipped'?'● 已发货':'● 已取消'}</span></td>
+      <td><span class="status-badge status-${o.status}">${o.status==='unpaid'?'● 待付款':o.status==='paid'?'● 已付款':o.status==='shipped'?'● 已发货':'● 已取消'}</span></td>
       <td>
-        ${o.status==='unpaid'?`<button class="btn btn-success" onclick="updateStatus('${o.id}','shipped')" style="padding:4px 10px;font-size:11px;">发货</button> <button class="btn btn-danger" onclick="updateStatus('${o.id}','cancelled')" style="padding:4px 10px;font-size:11px;">取消</button>`:''}
-        ${o.status==='shipped'?`<button class="btn btn-warning" onclick="updateStatus('${o.id}','unpaid')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
+        ${${o.status==='unpaid'?`<button class="btn btn-success" onclick="updateStatus('${o.id}','paid')" style="padding:4px 10px;font-size:11px;">确认付款</button>`+`<button class="btn btn-danger" onclick="updateStatus('${o.id}','cancelled')" style="padding:4px 10px;font-size:11px;">取消</button>`:''}
+        ${o.status==='paid'?`<button class="btn btn-primary" onclick="updateStatus('${o.id}','shipped')" style="padding:4px 10px;font-size:11px;">发货</button>`+`<button class="btn btn-warning" onclick="updateStatus('${o.id}','unpaid')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
+        ${o.status==='shipped'?`<button class="btn btn-warning" onclick="updateStatus('${o.id}','paid')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
+        ${o.status==='cancelled'?`<button class="btn btn-success" onclick="updateStatus('${o.id}','unpaid')" style="padding:4px 10px;font-size:11px;">恢复</button>`:''}        ${o.status==='shipped'?`<button class="btn btn-warning" onclick="updateStatus('${o.id}','unpaid')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
         ${o.status==='cancelled'?`<button class="btn" onclick="updateStatus('${o.id}','unpaid')" style="padding:4px 10px;font-size:11px;">恢复</button>`:''}
         <button class="btn btn-danger" onclick="deleteOrder('${o.id}')" style="padding:4px 10px;font-size:11px;">删除</button>
       </td>
