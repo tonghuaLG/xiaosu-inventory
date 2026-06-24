@@ -1855,7 +1855,7 @@
             result.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到该名字的订单</p></div>';
             return;
           }
-          const statusMap = { unpaid: '待付款', pending: '待付款', paid: '已付款', shipped: '已发货' };
+          const statusMap = { unpaid: '待付款', pending: '待付款', paid: '待发货', shipped: '已发货' };
           result.innerHTML = orders.map(order => {
             const items = order.items || (order.item ? [{ itemName: order.item, qty: order.qty }] : []);
             const itemsHtml = items.length > 0
