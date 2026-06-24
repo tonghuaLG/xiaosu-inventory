@@ -1857,10 +1857,10 @@
           }
           const statusMap = { unpaid: '待付款', paid: '已付款', shipped: '已发货' };
           result.innerHTML = orders.map(order => {
-            const items = (order.items || []);
+            const items = order.items || (order.item ? [{ itemName: order.item, qty: order.qty }] : []);
             const itemsHtml = items.length > 0
               ? '<div style="margin-top:8px;padding:10px;background:#f8f5e6;border-radius:8px;">' +
-                items.map(i => '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>' + (i.itemName || i.name || '-') + '</span><span style="color:#b8860b;font-weight:bold;">×' + (i.qty || 1) + '</span></div>').join('') +
+                items.map(i => '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>' + (i.itemName || i.name || i.item || '-') + '</span><span style="color:#b8860b;font-weight:bold;">×' + (i.qty || 1) + '</span></div>').join('') +
                 '</div>'
               : '';
             return '<div class="order-history-item" style="padding:14px;">' +
