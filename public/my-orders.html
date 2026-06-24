@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - XiaoSu Inventory</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #f7b733 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .search-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+        
+        .input-group button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #f7b733 0%, #fc4a1a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .input-group button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .orders-section {
+            padding: 30px;
+        }
+        
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .order-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #2a5298;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .order-id {
+            font-weight: bold;
+            color: #1e3c72;
+            font-size: 16px;
+        }
+        
+        .order-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-unpaid {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-paid {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-shipped {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .order-items {
+            margin: 15px 0;
+        }
+        
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .item-name {
+            flex: 1;
+            color: #333;
+        }
+        
+        .item-qty {
+            color: #666;
+            margin: 0 15px;
+        }
+        
+        .item-price {
+            color: #2a5298;
+            font-weight: bold;
+        }
+        
+        .order-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .order-total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fc4a1a;
+        }
+        
+        .order-time {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc3545;
+        }
+        
+        .refresh-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .refresh-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>馃摝 My Orders</h1>
+            <p>Check your order status</p>
+        </div>
+        
+        <div class="search-section">
+            <div class="input-group">
+                <input type="text" id="buyerInput" placeholder="Enter your name..." />
+                <button onclick="searchOrders()">Search</button>
+            </div>
+        </div>
+        
+        <div class="orders-section">
+            <div id="ordersContainer"></div>
+            <button class="refresh-btn" onclick="searchOrders()">Refresh Orders</button>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '';
+        
+        async function searchOrders() {
+            const buyer = document.getElementById('buyerInput').value.trim();
+            const container = document.getElementById('ordersContainer');
+            
+            if (!buyer) {
+                container.innerHTML = '<div class="error">Please enter your name</div>';
+                return;
+            }
+            
+            container.innerHTML = '<div class="loading">Searching orders...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/orders?buyer=${encodeURIComponent(buyer)}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch orders');
+                }
+                
+                displayOrders(data.orders || []);
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayOrders(orders) {
+            const container = document.getElementById('ordersContainer');
+            
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No orders found</h3>
+                        <p>You haven't placed any orders yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const ordersHtml = orders.map(order => {
+                const statusClass = `status-${order.status}`;
+                const statusText = order.status === 'unpaid' ? 'Unpaid' :
+                                 order.status === 'paid' ? 'Paid' : 'Shipped';
+                
+                const itemsHtml = order.items.map(item => `
+                    <div class="order-item">
+                        <span class="item-name">${item.itemName}</span>
+                        <span class="item-qty">x${item.qty}</span>
+                        <span class="item-price">$${item.price || 0}</span>
+                    </div>
+                `).join('');
+                
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <span class="order-id">Order #${order.id}</span>
+                            <span class="order-status ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="order-items">${itemsHtml}</div>
+                        <div class="order-footer">
+                            <span class="order-total">Total: $${order.totalPrice || 0}</span>
+                            <span class="order-time">${new Date(order.createdAt).toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = `<div class="orders-list">${ordersHtml}</div>`;
+        }
+        
+        // Allow Enter key to search
+        document.getElementById('buyerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchOrders();
+            }
+        });
+    </script>
+</body>
+</html>
