@@ -1337,10 +1337,10 @@
             cat.list.forEach((it, idx) => {
               if (!it || !it.n) return;
               items.push({
-                id: `${sv.server}__${cat.category}__${idx}__${it.n}`,
+                id: `${sv.server}__${cat.cat || cat.category || '未分类'}__${idx}__${it.n}`,
                 name: it.n,
                 server: sv.server,
-                category: cat.category || '未分类',
+                category: cat.cat || cat.category || '未分类',
                 price: it.p || 0,
                 stock: it.q || 0
               });
