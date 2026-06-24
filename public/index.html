@@ -1457,8 +1457,8 @@
           <button class="close-btn" onclick="closeOrders()">×</button>
         </div>
         <div class="modal-body">
-          <p class="modal-desc">请输入订单 ID 查询您的订单：</p>
-          <input type="text" class="form-input" id="orderSearchInput" placeholder="输入订单号 (如 ORD-123)" style="margin-bottom: 1rem;" />
+          <p class="modal-desc">输入您下单时的名字，查询所有订单：</p>
+          <input type="text" class="form-input" id="orderSearchInput" placeholder="输入名字（如：张三）" style="margin-bottom: 1rem;" />
           <button class="btn btn-block" onclick="searchOrder()">查询</button>
           <div id="orderResult" style="margin-top: 1.5rem;"></div>
         </div>
@@ -1843,32 +1843,34 @@
       }
       function closeOrders() { document.getElementById('ordersModal').style.display = 'none'; }
       async function searchOrder() {
-        const id = document.getElementById('orderSearchInput').value.trim();
-        if (!id) { alert('请输入订单号'); return; }
+        const buyer = document.getElementById('orderSearchInput').value.trim();
+        if (!buyer) { alert('请输入您的名字'); return; }
+        const result = document.getElementById('orderResult');
+        result.innerHTML = '<div class="loading">查询中...</div>';
         try {
-          const response = await fetch('/api/orders');
+          const response = await fetch('/api/orders?buyer=' + encodeURIComponent(buyer));
           const data = await response.json();
-          const order = (data.orders || []).find(o => (o.id || o._id) == id);
-          const result = document.getElementById('orderResult');
-          if (!order) { result.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到该订单</p></div>'; return; }
-          const statusMap = { pending: '待发货', confirmed: '已发货', shipped: '已发货' };
-          const statusKey = (order.status || 'pending');
-          result.innerHTML = `
+          const orders = data.orders || [];
+          if (orders.length === 0) {
+            result.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到该名字的订单</p></div>';
+            return;
+          }
+          const statusMap = { unpaid: '待付款', paid: '已付款', shipped: '已发货' };
+          result.innerHTML = orders.map(order => `
             <div class="order-history-item">
               <div class="order-row1">
                 <strong>订单 ${order.id || order._id}</strong>
-                <span class="status-badge ${statusKey === 'pending' ? 'pending' : 'confirmed'}">${statusMap[statusKey] || statusKey}</span>
+                <span class="status-badge ${order.status === 'unpaid' ? 'pending' : order.status === 'shipped' ? 'confirmed' : ''}">${statusMap[order.status] || order.status}</span>
               </div>
-              <div class="order-items-list">${(order.items || []).map(i => i.name + ' × ' + i.qty).join('<br>')}</div>
+              <div class="order-items-list">${(order.items || []).map(i => i.itemName + ' × ' + i.qty).join('<br>')}</div>
               <div class="order-row2">
                 <span>${order.createdAt ? new Date(order.createdAt).toLocaleString('zh-CN') : ''}</span>
-                <span class="order-total">合计 ￥${order.total || 0}</span>
+                <span class="order-total">合计 ￥${order.totalPrice || 0}</span>
               </div>
             </div>
-          `;
+          `).join('');
         } catch (e) { alert('查询失败：' + e.message); }
       }
-
       function resetFilters() { goHome(); }
 
       function setupSearch() {
