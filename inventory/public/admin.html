@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -469,17 +469,17 @@ async function doClearAllOrders() {
     let data = {};
     try { data = await res.json(); } catch(e) {}
     if (!res.ok) {
-      alert('清空失败: ' + (data.error || `HTTP ${res.status}`));
+      alert('Clear failed: ' + (data.error || `HTTP ${res.status}`));
       if (res.status === 403) { TOKEN = ''; location.reload(); }
       return;
     }
     hideClearConfirm();
     loadOrders();
   } catch(e) {
-    alert('网络错误: ' + e.message);
+    alert('Network error: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = '确定清空';
+    btn.textContent = 'Confirm Clear';
   }
 }
 
@@ -667,11 +667,11 @@ setInterval(() => {
 <div class="modal-overlay" id="clearModal">
   <div class="modal-box">
     <div class="modal-icon">⚠️</div>
-    <h3>确定清空所有订单？</h3>
-    <p>此操作将永久删除全部订单记录，<br>包括待发货、已发货、已取消的订单。<br>此操作不可撤销！</p>
+    <h3>Clear ALL Orders?</h3>
+    <p>This will permanently delete ALL orders,<br>including pending, shipped, and cancelled.<br>This CANNOT be undone!</p>
     <div class="modal-btns">
-      <button class="btn" onclick="hideClearConfirm()">取消</button>
-      <button class="btn danger" id="clearConfirmBtn" onclick="doClearAllOrders()">确定清空</button>
+      <button class="btn" onclick="hideClearConfirm()">Cancel</button>
+      <button class="btn danger" id="clearConfirmBtn" onclick="doClearAllOrders()">Confirm Clear</button>
     </div>
   </div>
 </div>
