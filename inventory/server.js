@@ -42,6 +42,25 @@ app.post('/api/inventory', (req, res) => {
   res.json({ ok: true, count: data.length });
 });
 
+// 文本导入存货（管理员）
+app.post('/api/inventory/import-text', (req, res) => {
+  const { password, servers } = req.body;
+  if (password !== ADMIN_PASS) return res.status(403).json({ error: '密码错误' });
+  if (!Array.isArray(servers) || servers.length === 0) return res.status(400).json({ error: '服务器数据为空' });
+  const db = loadDB();
+  if (!db.inventory) db.inventory = [];
+  let newCount = 0, updated = 0;
+  servers.forEach(s => {
+    if (!s.server || !Array.isArray(s.items)) return;
+    const idx = db.inventory.findIndex(x => x.server === s.server);
+    if (idx >= 0) { db.inventory[idx] = s; updated++; }
+    else { db.inventory.push(s); newCount++; }
+  });
+  saveDB(db);
+  console.log(`[文本导入] 共${servers.length}个 (新增${newCount}, 更新${updated})`);
+  res.json({ ok: true, count: servers.length, new: newCount, updated });
+});
+
 // 单个补货（管理员）
 app.patch('/api/inventory/restock', (req, res) => {
   const { password, server, item, qty } = req.body;
