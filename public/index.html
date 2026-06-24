@@ -1356,9 +1356,80 @@
       .text-center { text-align: center; }
       .mt-16 { margin-top: 16px; }
       .mb-16 { margin-bottom: 16px; }
-    </style>
+    /* ===== 开屏弹窗 ===== */
+  .splash-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .splash-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border: 2px solid var(--gold);
+    border-radius: 20px; padding: 40px 36px; width: 380px;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(200,151,58,0.15);
+    position: relative; overflow: hidden;
+  }
+  .splash-card::before {
+    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background: radial-gradient(circle, rgba(200,151,58,0.08) 0%, transparent 60%);
+    animation: rotate 12s linear infinite;
+  }
+  @keyframes rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  .splash-icon {
+    font-size: 48px; margin-bottom: 16px; position: relative; z-index: 1;
+  }
+  .splash-title {
+    font-size: 22px; font-weight: 900; color: var(--gold-light);
+    margin-bottom: 12px; letter-spacing: 2px; position: relative; z-index: 1;
+  }
+  .splash-subtitle {
+    font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.8;
+    margin-bottom: 24px; position: relative; z-index: 1;
+  }
+  .splash-wechat {
+    background: rgba(200,151,58,0.15); border: 1.5px solid var(--gold);
+    border-radius: 12px; padding: 14px 20px; margin-bottom: 24px;
+    position: relative; z-index: 1;
+  }
+  .splash-wechat-label {
+    font-size: 12px; color: var(--text-dim); margin-bottom: 6px;
+  }
+  .splash-wechat-id {
+    font-size: 20px; font-weight: 800; color: var(--gold-light);
+    letter-spacing: 3px; font-family: 'Courier New', monospace;
+    user-select: all; -webkit-user-select: all;
+  }
+  .splash-btn {
+    background: var(--gold-gradient); color: #1a1a2e; border: none;
+    padding: 14px 48px; font-size: 16px; font-weight: 800;
+    border-radius: 12px; cursor: pointer;
+    transition: all .3s; letter-spacing: 2px;
+    position: relative; z-index: 1;
+    box-shadow: 0 4px 20px rgba(200,151,58,0.3);
+  }
+  .splash-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(200,151,58,0.4); }
+
+  </style>
   
   <body>
+    <!-- 开屏弹窗 -->
+    <div class="splash-overlay" id="splashOverlay">
+      <div class="splash-card">
+        <div class="splash-icon">📦</div>
+        <div class="splash-title">小酥道具点单</div>
+        <div class="splash-subtitle">
+          下单后请带着<strong style="color:var(--gold-light)">订单截图</strong><br>添加小酥微信付款
+        </div>
+        <div class="splash-wechat">
+          <div class="splash-wechat-label">微信号</div>
+          <div class="splash-wechat-id">QSXGGf</div>
+        </div>
+        <button class="splash-btn" onclick="closeSplash()">我知道了</button>
+      </div>
+    </div>
+
     <div id="app" class="app-layout">
       <!-- 顶部导航（仿 7fen） -->
       <nav class="navbar">
@@ -1762,6 +1833,7 @@
 
       function openCart() { renderCart(); document.getElementById('cartModal').style.display = 'flex'; document.getElementById('buyerName').value = ''; }
       function closeCart() { document.getElementById('cartModal').style.display = 'none'; }
+      function closeSplash() { document.getElementById('splashOverlay').style.display = 'none'; }
       function renderCart() {
         const container = document.getElementById('cartItems');
         const footer = document.getElementById('cartFooter');
