@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -1235,9 +1235,9 @@
         <div class="filter-bar">
           <label for="serverSelect">区服：</label>
           <select id="serverSelect">
-            <option value="">全部服务器</option>
+            <option value="">请选择区服...</option>
           </select>
-          <div class="category-row" id="categoryRow">
+          <div class="category-row" id="categoryRow" style="display: none;">
             <div class="category-chip active" data-cat="">全部分类</div>
           </div>
         </div>
@@ -1303,7 +1303,7 @@
       // 全局状态（方案B：下拉框筛选服务器）
       let allItems = [];
       let allServers = [];
-      let currentServer = '';       // '' = 全部服务器
+      let currentServer = '';       // '' = 未选择
       let currentCategory = '';      // '' = 全部分类
       let cart = [];
       let lastOrderId = '';
@@ -1352,7 +1352,7 @@
 
       function populateServerSelect() {
         const sel = document.getElementById('serverSelect');
-        sel.innerHTML = '<option value="">全部服务器</option>';
+        sel.innerHTML = '<option value="">请选择区服...</option>';
         allServers.forEach(sv => {
           const opt = document.createElement('option');
           opt.value = sv.server;
@@ -1362,6 +1362,8 @@
         sel.onchange = function() {
           currentServer = this.value;
           currentCategory = '';
+          document.getElementById('searchInput').value = '';
+          document.getElementById('categoryRow').style.display = currentServer ? 'flex' : 'none';
           renderCategoryChips();
           renderItemGrid();
         };
@@ -1385,13 +1387,17 @@
 
       function renderItemGrid() {
         const grid = document.getElementById('itemGrid');
+        if (!currentServer) {
+          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🎮</div><p style="font-size:1.1rem;font-weight:600;">请先在上方选择区服</p><p style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.5rem;">选择后即可查看该区服的存货</p></div>';
+          return;
+        }
         let items = allItems;
-        if (currentServer) items = items.filter(i => i.server === currentServer);
+        items = items.filter(i => i.server === currentServer);
         if (currentCategory) items = items.filter(i => i.category === currentCategory);
         const keyword = (document.getElementById('searchInput').value || '').toLowerCase();
         if (keyword) items = items.filter(i => i.name.toLowerCase().includes(keyword) || i.server.toLowerCase().includes(keyword) || i.category.toLowerCase().includes(keyword));
         if (items.length === 0) {
-          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><p>暂无道具</p></div>';
+          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><p>该区服暂无道具</p></div>';
           return;
         }
         grid.innerHTML = items.map(item => {
@@ -1426,29 +1432,27 @@
       function openItemDetail(itemId) {
         const item = allItems.find(i => i.id === itemId);
         if (!item) return;
-        const sameName = allItems.filter(i => i.name === item.name);
-        const totalStock = sameName.reduce((s, i) => s + (i.stock || 0), 0);
-        const serverMap = {};
-        sameName.forEach(i => {
-          if (!serverMap[i.server]) serverMap[i.server] = { stock: 0, category: i.category };
-          serverMap[i.server].stock += (i.stock || 0);
-        });
-        const serverList = Object.entries(serverMap)
-          .map(([s, info]) => ({ server: s, stock: info.stock, category: info.category }))
-          .sort((a, b) => b.stock - a.stock);
         const initial = item.name.charAt(0);
         document.getElementById('itemDetailTitle').innerHTML =
           '<span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--primary-color);color:#fff;font-weight:800;margin-right:0.5rem;vertical-align:middle;">' + initial + '</span>' + item.name;
         document.getElementById('itemDetailBody').innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;margin-bottom:1rem;">
-            <div>
-              <div style="font-size:0.85rem;color:var(--text-secondary);">总库存（全部区服）</div>
-              <div style="font-size:1.5rem;font-weight:800;color:var(--primary-color);">${totalStock}</div>
+          <div style="padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;margin-bottom:0.5rem;">
+            <div style="font-size:0.85rem;color:var(--text-secondary);">区服</div>
+            <div style="font-size:1.1rem;font-weight:700;">${item.server}</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;margin-bottom:0.5rem;">
+            <div style="flex:1;padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;">
+              <div style="font-size:0.85rem;color:var(--text-secondary);">分类</div>
+              <div style="font-size:1.1rem;font-weight:700;">${item.category}</div>
             </div>
-            <div style="text-align:right;">
-              <div style="font-size:0.85rem;color:var(--text-secondary);">单价</div>
-              <div style="font-size:1.5rem;font-weight:800;color:var(--primary-color);">￥${item.price}</div>
+            <div style="flex:1;padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;">
+              <div style="font-size:0.85rem;color:var(--text-secondary);">库存</div>
+              <div style="font-size:1.1rem;font-weight:800;color:var(--primary-color);">${item.stock}</div>
             </div>
+          </div>
+          <div style="padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;margin-bottom:0.5rem;">
+            <div style="font-size:0.85rem;color:var(--text-secondary);">单价</div>
+            <div style="font-size:1.5rem;font-weight:800;color:var(--primary-color);">￥${item.price}</div>
           </div>
           <button class="btn btn-block" style="margin-top:0.5rem;" onclick="addToCart('${item.id}'); closeItemDetail();">加入购物车</button>
         `;
