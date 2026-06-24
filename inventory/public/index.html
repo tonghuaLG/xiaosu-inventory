@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -1117,6 +1117,53 @@
         margin: 8px 0 0 0;
       }
 
+
+      /* 筛选栏 */
+      .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background: #fff;
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+      }
+      .filter-bar label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+      #serverSelect {
+        padding: 8px 32px 8px 12px;
+        border: 1.5px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 12px;
+        transition: border-color 0.2s;
+        min-width: 160px;
+      }
+      #serverSelect:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px var(--primary-light);
+      }
+      .filter-bar .category-row {
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: none;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+      }
       /* 响应式 */
       @media (max-width: 480px) {
         #app { padding: 0; }
@@ -1143,7 +1190,7 @@
       <!-- 顶部导航（仿 7fen） -->
       <nav class="navbar">
         <div class="navbar-inner">
-          <div class="navbar-brand" onclick="goHome()">
+          <div class="navbar-brand" onclick="resetFilters()">
             <div class="brand-mark">酥</div>
             <div>
               <div class="logo-text">小酥道具</div>
@@ -1162,49 +1209,30 @@
             <button class="icon-btn" onclick="openOrders()" title="我的订单" id="ordersBtn">
               📋
             </button>
-            <button class="icon-btn" onclick="goHome()" title="首页">
+            <button class="icon-btn" onclick="resetFilters()" title="首页">
               🏠
             </button>
           </div>
         </div>
       </nav>
 
-      <!-- 主页 -->
+      <!-- 主内容：单视图，顶部筛选栏 + 物品列表 -->
       <div class="main-container centered-layout">
-        <!-- Home 视图：服务器网格 -->
-        <div id="homeView" class="content-area">
-          <div class="hero-section">
-            <h1>斗罗大陆 <span class="highlight">道具点单</span></h1>
-            <p class="hero-lead">选择区服，浏览存货，一键下单</p>
-          </div>
-
-          <!-- 分类过滤 -->
+        <!-- 筛选栏：服务器下拉框 + 分类 -->
+        <div class="filter-bar">
+          <label for="serverSelect">区服：</label>
+          <select id="serverSelect">
+            <option value="">全部服务器</option>
+          </select>
           <div class="category-row" id="categoryRow">
-            <div class="category-chip active" data-cat="">全部</div>
-          </div>
-
-          <!-- 服务器网格 -->
-          <div id="serverGrid" class="server-grid">
-            <div class="empty-state"><div class="empty-icon">⏳</div><p>加载中...</p></div>
+            <div class="category-chip active" data-cat="">全部分类</div>
           </div>
         </div>
 
-        <!-- Server 视图：物品列表 -->
-        <div id="serverView" class="content-area" style="display: none;">
-          <div class="content-header">
-            <div class="header-left">
-              <button class="back-btn" onclick="goHome()">← 返回</button>
-              <div class="header-title-group">
-                <h2 id="serverTitle">服务器</h2>
-                <p class="subtitle" id="serverSubtitle">0 件道具</p>
-              </div>
-            </div>
-          </div>
-          <div class="category-row" id="itemCategoryRow">
-            <div class="category-chip active" data-cat="">全部分类</div>
-          </div>
+        <!-- 物品列表（始终显示） -->
+        <div id="itemGridView" class="content-area">
           <div id="itemGrid" class="item-grid">
-            <div class="empty-state"><div class="empty-icon">📦</div><p>暂无道具</p></div>
+            <div class="empty-state"><div class="empty-icon">⏳</div><p>加载中...</p></div>
           </div>
         </div>
       </div>
@@ -1246,14 +1274,13 @@
       </div>
     </div>
 
+
     <script>
-      // 全局状态
+      // 全局状态（方案B：下拉框筛选服务器）
       let allItems = [];
       let allServers = [];
-      let currentView = 'home';
-      let currentServer = '';
-      let currentItemCategory = '';
-      let serverCategoryFilter = '';
+      let currentServer = '';       // '' = 全部服务器
+      let currentCategory = '';      // '' = 全部分类
       let cart = [];
       let lastOrderId = '';
 
@@ -1268,11 +1295,12 @@
           const data = await response.json();
           allItems = flattenInventory(data.servers || []);
           allServers = data.servers || [];
-          renderServerCategories();
-          renderServerGrid();
+          populateServerSelect();
+          renderCategoryChips();
+          renderItemGrid();
         } catch (error) {
           console.error('Failed to load inventory:', error);
-          document.getElementById('serverGrid').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>加载失败，请刷新重试</p></div>';
+          document.getElementById('itemGrid').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>加载失败，请刷新重试</p></div>';
         }
       }
 
@@ -1298,69 +1326,34 @@
         return items;
       }
 
-      function getServerGroup(name) {
-        return name.replace(/[0-9]+$/, '').trim() || name;
-      }
-
-      function renderServerCategories() {
-        const groups = [...new Set(allItems.map(i => getServerGroup(i.server)).filter(Boolean))];
-        const row = document.getElementById('categoryRow');
-        row.innerHTML = `<div class="category-chip${!serverCategoryFilter ? ' active' : ''}" data-cat="">全部</div>` +
-          groups.map(g => `<div class="category-chip${serverCategoryFilter === g ? ' active' : ''}" data-cat="${g}">${g}</div>`).join('');
-        row.querySelectorAll('.category-chip').forEach(chip => {
-          chip.onclick = function() {
-            serverCategoryFilter = this.dataset.cat;
-            renderServerCategories();
-            renderServerGrid();
-          };
+      function populateServerSelect() {
+        const sel = document.getElementById('serverSelect');
+        sel.innerHTML = '<option value="">全部服务器</option>';
+        allServers.forEach(sv => {
+          const opt = document.createElement('option');
+          opt.value = sv.server;
+          opt.textContent = sv.server;
+          sel.appendChild(opt);
         });
+        sel.onchange = function() {
+          currentServer = this.value;
+          currentCategory = '';
+          renderCategoryChips();
+          renderItemGrid();
+        };
       }
 
-      function renderServerGrid() {
-        const grid = document.getElementById('serverGrid');
-        const filtered = allServers.filter(sv => {
-          if (serverCategoryFilter && getServerGroup(sv.server) !== serverCategoryFilter) return false;
-          return true;
-        });
-        if (filtered.length === 0) {
-          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📂</div><p>暂无服务器</p></div>';
-          return;
-        }
-        const countMap = {};
-        allItems.forEach(i => { countMap[i.server] = (countMap[i.server] || 0) + 1; });
-        grid.innerHTML = filtered.map(sv => `
-          <div class="card server-card" onclick="openServer('${sv.server.replace(/'/g, "\\'")}')">
-            <div class="card-body">
-              <h3>${sv.server}</h3>
-              <span class="badge-inv">${countMap[sv.server] || 0} 件道具</span>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      function openServer(name) {
-        currentServer = name;
-        currentView = 'server';
-        document.getElementById('homeView').style.display = 'none';
-        document.getElementById('serverView').style.display = '';
-        document.getElementById('serverTitle').textContent = name;
-        const items = allItems.filter(i => i.server === name);
-        document.getElementById('serverSubtitle').textContent = `${items.length} 件道具 · ${getServerGroup(name)}`;
-        currentItemCategory = '';
-        renderItemCategories();
-        renderItemGrid();
-      }
-
-      function renderItemCategories() {
-        const items = allItems.filter(i => i.server === currentServer);
+      function renderCategoryChips() {
+        let items = allItems;
+        if (currentServer) items = items.filter(i => i.server === currentServer);
         const cats = [...new Set(items.map(i => i.category).filter(Boolean))];
-        const row = document.getElementById('itemCategoryRow');
-        row.innerHTML = `<div class="category-chip${!currentItemCategory ? ' active' : ''}" data-cat="">全部分类</div>` +
-          cats.map(c => `<div class="category-chip${currentItemCategory === c ? ' active' : ''}" data-cat="${c}">${c}</div>`).join('');
+        const row = document.getElementById('categoryRow');
+        row.innerHTML = `<div class="category-chip${!currentCategory ? ' active' : ''}" data-cat="">全部分类</div>` +
+          cats.map(c => `<div class="category-chip${currentCategory === c ? ' active' : ''}" data-cat="${c}">${c}</div>`).join('');
         row.querySelectorAll('.category-chip').forEach(chip => {
           chip.onclick = function() {
-            currentItemCategory = this.dataset.cat;
-            renderItemCategories();
+            currentCategory = this.dataset.cat;
+            renderCategoryChips();
             renderItemGrid();
           };
         });
@@ -1368,8 +1361,9 @@
 
       function renderItemGrid() {
         const grid = document.getElementById('itemGrid');
-        let items = allItems.filter(i => i.server === currentServer);
-        if (currentItemCategory) items = items.filter(i => i.category === currentItemCategory);
+        let items = allItems;
+        if (currentServer) items = items.filter(i => i.server === currentServer);
+        if (currentCategory) items = items.filter(i => i.category === currentCategory);
         const keyword = (document.getElementById('searchInput').value || '').toLowerCase();
         if (keyword) items = items.filter(i => i.name.toLowerCase().includes(keyword) || i.category.toLowerCase().includes(keyword));
         if (items.length === 0) {
@@ -1388,7 +1382,7 @@
                   <span class="item-stock">库存 ${item.stock}</span>
                 </div>
                 <div class="item-meta">
-                  <span class="item-server-tag">${item.category}</span>
+                  <span class="item-server-tag">${item.server} · ${item.category}</span>
                   <span class="item-price">￥${item.price}</span>
                 </div>
               </div>
@@ -1487,9 +1481,7 @@
           const result = await response.json();
           if (response.ok) {
             lastOrderId = result.id || result.orderId || ('ORD-' + Date.now());
-            alert(`下单成功！
-订单号：${lastOrderId}
-请妥善保存订单号以便查询`);
+            alert('下单成功！\n订单号：' + lastOrderId + '\n请妥善保存订单号以便查询');
             cart = [];
             updateCartBadge();
             renderCart();
@@ -1527,7 +1519,7 @@
                 <strong>订单 ${order.id || order._id}</strong>
                 <span class="status-badge ${statusKey === 'pending' ? 'pending' : 'confirmed'}">${statusMap[statusKey] || statusKey}</span>
               </div>
-              <div class="order-items-list">${(order.items || []).map(i => `${i.name} × ${i.qty}`).join('<br>')}</div>
+              <div class="order-items-list">${(order.items || []).map(i => i.name + ' × ' + i.qty).join('<br>')}</div>
               <div class="order-row2">
                 <span>${order.createdAt ? new Date(order.createdAt).toLocaleString('zh-CN') : ''}</span>
                 <span class="order-total">合计 ￥${order.total || 0}</span>
@@ -1537,38 +1529,22 @@
         } catch (e) { alert('查询失败：' + e.message); }
       }
 
-      function goHome() {
-        currentView = 'home';
+      function resetFilters() {
         currentServer = '';
-        document.getElementById('homeView').style.display = '';
-        document.getElementById('serverView').style.display = 'none';
+        currentCategory = '';
+        document.getElementById('serverSelect').value = '';
+        renderCategoryChips();
+        renderItemGrid();
       }
 
       function setupSearch() {
         document.getElementById('searchInput').addEventListener('input', function() {
-          if (currentView === 'home') {
-            const keyword = this.value.toLowerCase();
-            const filtered = allServers.filter(sv => sv.server.toLowerCase().includes(keyword));
-            const grid = document.getElementById('serverGrid');
-            if (filtered.length === 0) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>无匹配服务器</p></div>'; return; }
-            const countMap = {};
-            allItems.forEach(i => { countMap[i.server] = (countMap[i.server] || 0) + 1; });
-            grid.innerHTML = filtered.map(sv => `
-              <div class="card server-card" onclick="openServer('${sv.server.replace(/'/g, "\\'")}')">
-                <div class="card-body">
-                  <h3>${sv.server}</h3>
-                  <span class="badge-inv">${countMap[sv.server] || 0} 件道具</span>
-                </div>
-              </div>
-            `).join('');
-          } else {
-            renderItemGrid();
-          }
+          renderItemGrid();
         });
       }
     </script>
 
-  </body>
+    </body>
 
   </body>
 </html>
