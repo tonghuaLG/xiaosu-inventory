@@ -560,6 +560,7 @@
       let cart = [];
       let orders = [];
       let allItems = [];
+      let servers = [];
 
       // 初始化
       document.addEventListener('DOMContentLoaded', function() {
@@ -572,12 +573,91 @@
         try {
           const response = await fetch('/api/inventory');
           const data = await response.json();
-          allItems = data.items || [];
+          allItems = flattenInventory(data.servers || []);
+          servers = [...new Set(allItems.map(i => i.server))].filter(Boolean);
+          renderServerList();
+          renderCategoryList();
           renderItems();
         } catch (error) {
           console.error('Failed to load inventory:', error);
           document.getElementById('itemsList').innerHTML = '<div class="text-center mt-16" style="color: #dc2626;">加载失败，请刷新重试</div>';
         }
+      }
+
+      // 将后端嵌套结构 {servers:[{server,items:[{category,list:[{n,q,p}]}]}]} 扁平化为 {id,name,server,category,price,stock}
+      function flattenInventory(servers) {
+        const items = [];
+        servers.forEach(sv => {
+          if (!sv.items || !Array.isArray(sv.items)) return;
+          sv.items.forEach(cat => {
+            if (!cat.list || !Array.isArray(cat.list)) return;
+            cat.list.forEach((it, idx) => {
+              if (!it || !it.n) return;
+              items.push({
+                id: `${sv.server}__${cat.category}__${idx}__${it.n}`,
+                name: it.n,
+                server: sv.server,
+                category: cat.category || '未分类',
+                price: it.p || 0,
+                stock: it.q || 0
+              });
+            });
+          });
+        });
+        return items;
+      }
+
+      // 动态生成服务器下拉
+      function renderServerList() {
+        const pill = document.querySelector('.server-pill');
+        const nameEl = pill.querySelector('.server-pill-name');
+        if (servers.length === 0) { nameEl.textContent = '暂无数据'; return; }
+        nameEl.textContent = currentServer || '选择服务器';
+        pill.onclick = function(e) {
+          e.stopPropagation();
+          if (document.getElementById('serverMenu')) {
+            document.getElementById('serverMenu').remove();
+            return;
+          }
+          const menu = document.createElement('div');
+          menu.id = 'serverMenu';
+          menu.style.cssText = 'position:absolute;top:48px;left:0;z-index:50;background:#fff;border:1px solid var(--line-soft);border-radius:14px;box-shadow:0 12px 28px rgba(30,64,175,0.12);max-height:340px;overflow-y:auto;min-width:220px;padding:6px;';
+          menu.innerHTML = `
+            <div data-srv="" style="padding:10px 14px;cursor:pointer;border-radius:10px;font-size:13px;font-weight:600;color:${!currentServer ? 'var(--gold)' : 'var(--text-main)'};">全部服务器</div>
+            ${servers.map(s => `<div data-srv="${s}" style="padding:10px 14px;cursor:pointer;border-radius:10px;font-size:13px;color:${s === currentServer ? 'var(--gold)' : 'var(--text-main)'};font-weight:${s === currentServer ? 800 : 600};">${s}</div>`).join('')}
+          `;
+          menu.querySelectorAll('[data-srv]').forEach(el => {
+            el.onmouseover = () => el.style.background = 'rgba(200,151,58,0.08)';
+            el.onmouseout = () => el.style.background = '';
+            el.onclick = (e) => {
+              e.stopPropagation();
+              currentServer = el.dataset.srv;
+              menu.remove();
+              renderItems();
+              renderServerList();
+            };
+          });
+          pill.style.position = 'relative';
+          pill.appendChild(menu);
+        };
+        document.addEventListener('click', function closeMenu() {
+          const m = document.getElementById('serverMenu');
+          if (m) m.remove();
+        }, { once: true });
+      }
+
+      // 动态生成分类
+      function renderCategoryList() {
+        const cats = ['全部', ...new Set(allItems.map(i => i.category).filter(Boolean))];
+        const nav = document.querySelector('.category-nav');
+        nav.innerHTML = cats.map(c => `<div class="category-tab${c === currentCategory ? ' active' : ''}">${c}</div>`).join('');
+        nav.querySelectorAll('.category-tab').forEach(tab => {
+          tab.onclick = function() {
+            currentCategory = this.textContent;
+            renderCategoryList();
+            renderItems();
+          };
+        });
       }
 
       // 渲染商品列表
@@ -701,15 +781,7 @@
 
       // 设置事件监听
       function setupEventListeners() {
-        // 分类标签点击
-        document.querySelectorAll('.category-tab').forEach(tab => {
-          tab.addEventListener('click', function() {
-            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            currentCategory = this.textContent;
-            renderItems();
-          });
-        });
+        // 分类标签点击由 renderCategoryList() 接管
 
         // 底部导航点击
         document.querySelectorAll('.nav-item').forEach(item => {
