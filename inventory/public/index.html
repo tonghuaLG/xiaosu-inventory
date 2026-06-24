@@ -1434,6 +1434,11 @@
         <div class="modal-body">
           <div id="cartItems"></div>
           <div id="cartFooter" style="display: none; margin-top: 1.5rem;">
+            <div style="margin-bottom: 0.75rem;">
+              <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;font-weight:600;">买家称呼（必填）</label>
+              <input type="text" id="buyerName" placeholder="如：老王、玩家123" maxlength="20"
+                style="width:100%;padding:0.6rem 0.75rem;border:1.5px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--bg-surface-secondary);" />
+            </div>
             <div class="order-row1" style="margin-bottom: 1rem;">
               <span style="font-weight: 700;">合计</span>
               <span class="order-total" id="cartTotal">￥0</span>
@@ -1755,7 +1760,7 @@
         else { badge.style.display = 'none'; }
       }
 
-      function openCart() { renderCart(); document.getElementById('cartModal').style.display = 'flex'; }
+      function openCart() { renderCart(); document.getElementById('cartModal').style.display = 'flex'; document.getElementById('buyerName').value = ''; }
       function closeCart() { document.getElementById('cartModal').style.display = 'none'; }
       function renderCart() {
         const container = document.getElementById('cartItems');
@@ -1782,32 +1787,52 @@
 
       async function checkout() {
         if (cart.length === 0) { alert('购物车为空'); return; }
-        const order = {
-          items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, server: i.server, category: i.category })),
-          total: cart.reduce((s, i) => s + i.price * i.qty, 0),
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-        };
-        try {
-          const response = await fetch('/api/orders', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(order),
-          });
-          const result = await response.json();
-          if (response.ok) {
-            lastOrderId = result.id || result.orderId || ('ORD-' + Date.now());
-            alert('下单成功！\n订单号：' + lastOrderId + '\n请妥善保存订单号以便查询');
-            cart = [];
-            updateCartBadge();
-            renderCart();
-            renderItemGrid();
-            closeCart();
-          } else {
-            alert('下单失败：' + (result.error || '未知错误'));
+        const buyer = (document.getElementById('buyerName').value || '').trim();
+        if (!buyer) { alert('请填写买家称呼'); return; }
+        // 拆单：购物车每个物品作为一个独立订单
+        const platform = '天使黄金';
+        const orderIds = [];
+        const failed = [];
+        for (const item of cart) {
+          const order = {
+            server: item.server,
+            buyer: buyer,
+            item: item.name,
+            qty: item.qty,
+            platform: platform,
+            category: item.category || ''
+          };
+          try {
+            const response = await fetch('/api/orders', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(order),
+            });
+            const result = await response.json();
+            if (response.ok) {
+              orderIds.push(result.order?.id || result.id || '');
+            } else {
+              failed.push(item.name + '：' + (result.error || '未知错误'));
+            }
+          } catch (e) {
+            failed.push(item.name + '：网络错误');
           }
-        } catch (e) {
-          console.error(e);
-          alert('下单失败，请重试');
+        }
+        if (orderIds.length > 0) {
+          lastOrderId = orderIds.join(', ');
+          const msg = '下单成功！共 ' + orderIds.length + ' 笔订单' +
+            (failed.length > 0 ? '\n失败 ' + failed.length + ' 笔：' + failed.join('；') : '') +
+            '\n订单号：' + lastOrderId + '\n请妥善保存订单号以便查询';
+          alert(msg);
+          cart = [];
+          document.getElementById('buyerName').value = '';
+          updateCartBadge();
+          renderCart();
+          renderItemGrid();
+          closeCart();
+          // 刷新库存显示（后端已扣减）
+          if (typeof loadInventory === 'function') loadInventory();
+        } else {
+          alert('全部下单失败：\n' + failed.join('\n'));
         }
       }
 
