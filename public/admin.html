@@ -526,7 +526,7 @@ function renderOrderRows(orders) {
       <td style="font-size:12px;color:var(--text-dim);">${esc(o.platform)}</td>
       <td><span class="status-badge status-${o.status}">${o.status==='unpaid'?'● 待付款':o.status==='paid'?'● 已付款':o.status==='shipped'?'● 已发货':'● 已取消'}</span></td>
       <td>
-        ${${o.status==='unpaid'?`<button class="btn btn-success" onclick="updateStatus('${o.id}','paid')" style="padding:4px 10px;font-size:11px;">确认付款</button>`+`<button class="btn btn-danger" onclick="updateStatus('${o.id}','cancelled')" style="padding:4px 10px;font-size:11px;">取消</button>`:''}
+        ${o.status==='unpaid'?`<button class="btn btn-success" onclick="updateStatus('${o.id}','paid')" style="padding:4px 10px;font-size:11px;">确认付款</button>`+`<button class="btn btn-danger" onclick="updateStatus('${o.id}','cancelled')" style="padding:4px 10px;font-size:11px;">取消</button>`:''}
         ${o.status==='paid'?`<button class="btn btn-primary" onclick="updateStatus('${o.id}','shipped')" style="padding:4px 10px;font-size:11px;">发货</button>`+`<button class="btn btn-warning" onclick="updateStatus('${o.id}','unpaid')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
         ${o.status==='shipped'?`<button class="btn btn-warning" onclick="updateStatus('${o.id}','paid')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
         ${o.status==='cancelled'?`<button class="btn btn-success" onclick="updateStatus('${o.id}','unpaid')" style="padding:4px 10px;font-size:11px;">恢复</button>`:''}        ${o.status==='shipped'?`<button class="btn btn-warning" onclick="updateStatus('${o.id}','unpaid')" style="padding:4px 10px;font-size:11px;">撤回</button>`:''}
