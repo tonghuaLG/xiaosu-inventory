@@ -7,20 +7,24 @@
     <style>
       /* 基础样式 */
       :root {
-        --page-bg: #f5f7fa;
-        --phone-bg: linear-gradient(180deg, #fefefe 0%, #f5f7fa 100%);
+        --page-bg: #eef2f9;
+        --phone-bg: linear-gradient(180deg, #ffffff 0%, #eef2f9 100%);
         --card-bg: #fff;
-        --soft-bg: #f5f7fa;
-        --accent-rgb: 59, 130, 246;
-        --accent: #3b82f6;
-        --accent-deep: #2563eb;
-        --accent-soft: rgba(59, 130, 246, 0.12);
-        --text-main: #1f2937;
-        --text-sub: #6b7280;
+        --soft-bg: #f4f6fb;
+        --accent-rgb: 30, 64, 175;
+        --accent: #1e40af;
+        --accent-deep: #1e3a8a;
+        --accent-soft: rgba(30, 64, 175, 0.08);
+        --gold: #c8973a;
+        --gold-light: #f1d98a;
+        --gold-gradient: linear-gradient(135deg, #f1c557 0%, #c8973a 100%);
+        --text-main: #1e293b;
+        --text-sub: #64748b;
         --text-light: #fff;
-        --line-soft: rgba(148, 163, 184, 0.24);
-        --shadow-phone: 0 18px 40px rgba(148, 163, 184, 0.12);
-        --shadow-card: 0 10px 24px rgba(148, 163, 184, 0.1);
+        --line-soft: rgba(148, 163, 184, 0.2);
+        --line-gold: rgba(200, 151, 58, 0.35);
+        --shadow-phone: 0 18px 40px rgba(30, 64, 175, 0.08);
+        --shadow-card: 0 6px 18px rgba(30, 64, 175, 0.06);
       }
 
       * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -57,12 +61,31 @@
         position: relative;
       }
 
+      /* 品牌标识（斗罗H5蓝金点缀）*/
+      .brand-mark {
+        background: var(--gold-gradient);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 900;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(200, 151, 58, 0.35);
+        justify-content: center;
+        align-items: center;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        flex-shrink: 0;
+        font-family: 'STKaiti', 'KaiTi', serif;
+        letter-spacing: -0.05em;
+      }
+
       /* 顶部导航 */
       .topbar {
         z-index: 10;
         backdrop-filter: blur(14px);
-        background: rgba(255, 255, 255, 0.88);
+        background: rgba(255, 255, 255, 0.92);
         border: 1px solid var(--line-soft);
+        border-top: 2px solid var(--gold);
         border-radius: 20px;
         padding: 10px 12px;
         position: sticky;
@@ -99,8 +122,8 @@
 
       /* 搜索栏 */
       .search-bar {
-        background: #f6f7fb;
-        border: 1px solid rgba(148, 163, 184, 0.24);
+        background: #f4f6fb;
+        border: 1px solid var(--line-soft);
         border-radius: 999px;
         align-items: center;
         height: 36px;
@@ -109,6 +132,11 @@
         overflow: hidden;
         flex: 1;
         min-width: 0;
+        transition: border-color 0.15s, background 0.15s;
+      }
+      .search-bar:focus-within {
+        border-color: var(--line-gold);
+        background: #fff;
       }
       .search-bar input {
         width: 100%;
@@ -158,9 +186,10 @@
         display: inline-flex;
       }
       .category-tab.active {
-        border-color: rgba(var(--accent-rgb), 0.18);
-        background: var(--accent-soft);
-        color: var(--accent-deep);
+        border-color: var(--line-gold);
+        background: rgba(200, 151, 58, 0.08);
+        color: var(--gold);
+        font-weight: 800;
       }
 
       /* 商品卡片 */
@@ -168,6 +197,7 @@
         background: #fff;
         box-shadow: var(--shadow-card);
         border: 1px solid var(--line-soft);
+        border-top: 2px solid var(--gold);
         border-radius: 22px;
         padding: 14px;
         margin-bottom: 12px;
@@ -176,7 +206,7 @@
       }
       .item-card:hover {
         border-color: rgba(var(--accent-rgb), 0.28);
-        box-shadow: 0 14px 30px rgba(var(--accent-rgb), 0.12);
+        box-shadow: 0 14px 30px rgba(200, 151, 58, 0.18);
         transform: translateY(-2px);
       }
       .item-card-header {
@@ -197,7 +227,7 @@
         margin: 0;
       }
       .item-card-price {
-        color: #dc2626;
+        color: var(--gold);
         font-size: 18px;
         font-weight: 800;
         letter-spacing: -0.02em;
@@ -211,9 +241,9 @@
         margin-top: 4px;
       }
       .item-card-add-btn {
-        background: var(--accent-soft);
-        color: var(--accent-deep);
-        border: 1px solid rgba(var(--accent-rgb), 0.22);
+        background: var(--gold-gradient);
+        color: #fff;
+        border: 0;
         border-radius: 14px;
         cursor: pointer;
         min-width: 90px;
@@ -225,6 +255,7 @@
         align-items: center;
         justify-content: center;
         transition: all 0.15s;
+        box-shadow: 0 4px 10px rgba(200, 151, 58, 0.25);
       }
       .item-card-add-btn:hover {
         background: rgba(var(--accent-rgb), 0.18);
@@ -235,6 +266,7 @@
         z-index: 20;
         background: #fff;
         border: 1px solid var(--line-soft);
+        border-top: 2px solid var(--gold);
         border-radius: 24px 24px 18px 18px;
         padding: 8px 12px;
         display: flex;
@@ -262,8 +294,8 @@
         transition: color 0.15s, background 0.15s;
       }
       .nav-item.active {
-        color: var(--accent-deep);
-        background: var(--accent-soft);
+        color: var(--gold);
+        background: rgba(200, 151, 58, 0.08);
       }
       .nav-icon {
         width: 22px;
@@ -329,7 +361,7 @@
         margin: 0 0 4px 0;
       }
       .cart-item-price {
-        color: #dc2626;
+        color: var(--gold);
         font-size: 15px;
         font-weight: 800;
       }
@@ -387,7 +419,7 @@
         margin: 4px 0;
       }
       .order-card-total {
-        color: #dc2626;
+        color: var(--gold);
         font-size: 16px;
         font-weight: 800;
         margin: 8px 0 0 0;
@@ -421,6 +453,7 @@
           <!-- 顶部导航 -->
           <div class="topbar">
             <div class="topbar-inner">
+              <div class="brand-mark">酥</div>
               <div class="server-pill">
                 <svg class="server-pill-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
@@ -505,7 +538,7 @@
           </div>
           <div style="margin-top: 16px; text-align: center;">
             <button onclick="checkout()" style="
-              background: var(--accent);
+              background: var(--gold-gradient);
               color: #fff;
               border: 0;
               border-radius: 14px;
@@ -513,6 +546,7 @@
               font-size: 15px;
               font-weight: 700;
               cursor: pointer;
+              box-shadow: 0 6px 14px rgba(200, 151, 58, 0.3);
             ">提交订单</button>
           </div>
         </div>
