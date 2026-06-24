@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -1192,6 +1192,166 @@
         }
       }
 
+
+      /* ========== 首页：区服网格视图 ========== */
+      .home-view {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px 24px 80px;
+      }
+      .home-header {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .home-header h1 {
+        font-size: 28px;
+        font-weight: 900;
+        background: var(--gold-gradient);
+        -webkit-text-fill-color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+        margin-bottom: 6px;
+        letter-spacing: -0.02em;
+      }
+      .home-header p {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+      .server-group {
+        margin-bottom: 28px;
+      }
+      .server-group-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        padding: 6px 0 6px 12px;
+        border-left: 4px solid var(--primary-color);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .server-group-title .group-count {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+      .server-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      .server-card {
+        background: var(--bg-surface);
+        border: 1.5px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 18px 14px;
+        cursor: pointer;
+        transition: all 0.22s var(--ease);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+      .server-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gold-gradient);
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .server-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary-color);
+      }
+      .server-card:hover::before {
+        opacity: 1;
+      }
+      .server-card .server-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+        line-height: 1.4;
+        word-break: keep-all;
+      }
+      .server-card .server-count {
+        display: inline-block;
+        padding: 3px 10px;
+        background: var(--primary-light);
+        color: var(--primary-color);
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      @media (max-width: 640px) {
+        .server-grid {
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+          gap: 8px;
+        }
+        .server-card { padding: 14px 8px; }
+        .server-card .server-name { font-size: 13px; }
+        .home-view { padding: 16px 12px 80px; }
+        .home-header h1 { font-size: 22px; }
+      }
+
+      /* ========== 区服详情视图顶部条 ========== */
+      .server-view-header {
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        position: sticky;
+        top: 72px;
+        z-index: 50;
+      }
+      .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        background: var(--bg-surface-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .back-btn:hover {
+        background: var(--primary-light);
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+        transform: translateX(-2px);
+      }
+      .current-server-label {
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--text-primary);
+      }
+      .current-server-label .item-count-mini {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-left: 6px;
+      }
+      @media (max-width: 640px) {
+        .server-view-header { padding: 10px 12px; top: 64px; }
+        .current-server-label { font-size: 14px; }
+      }
+
       /* 工具类 */
       .text-center { text-align: center; }
       .mt-16 { margin-top: 16px; }
@@ -1229,23 +1389,36 @@
         </div>
       </nav>
 
-      <!-- 主内容：单视图，顶部筛选栏 + 物品列表 -->
-      <div class="main-container centered-layout">
-        <!-- 筛选栏：服务器下拉框 + 分类 -->
-        <div class="filter-bar">
-          <label for="serverSelect">区服：</label>
-          <select id="serverSelect">
-            <option value="">请选择区服...</option>
-          </select>
-          <div class="category-row" id="categoryRow" style="display: none;">
-            <div class="category-chip active" data-cat="">全部分类</div>
+      <!-- 主内容：两个视图切换 -->
+      <div class="main-container centered-layout" style="width:100%;max-width:1200px;margin:0 auto;">
+
+        <!-- 视图A：区服网格（首页） -->
+        <div id="homeView" class="home-view">
+          <div class="home-header">
+            <h1>选择区服</h1>
+            <p>共 <span id="totalServerCount">0</span> 个区服，<span id="totalItemCount">0</span> 件道具</p>
+          </div>
+          <div id="serverGridContainer">
+            <div class="empty-state"><div class="empty-icon">⏳</div><p>加载中...</p></div>
           </div>
         </div>
 
-        <!-- 物品列表（始终显示） -->
-        <div id="itemGridView" class="content-area">
-          <div id="itemGrid" class="item-grid">
-            <div class="empty-state"><div class="empty-icon">⏳</div><p>加载中...</p></div>
+        <!-- 视图B：物品列表（进入区服后） -->
+        <div id="serverView" style="display:none;">
+          <div class="server-view-header">
+            <button class="back-btn" onclick="goHome()">← 返回区服列表</button>
+            <div class="current-server-label">
+              <span id="currentServerName">-</span>
+              <span class="item-count-mini" id="currentServerItemCount"></span>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="category-row" id="categoryRow">
+              <div class="category-chip active" data-cat="">全部分类</div>
+            </div>
+          </div>
+          <div id="itemGridView" class="content-area">
+            <div id="itemGrid" class="item-grid"></div>
           </div>
         </div>
       </div>
@@ -1319,9 +1492,7 @@
           const data = await response.json();
           allItems = flattenInventory(data.servers || []);
           allServers = data.servers || [];
-          populateServerSelect();
-          renderCategoryChips();
-          renderItemGrid();
+          renderHomeView();
         } catch (error) {
           console.error('Failed to load inventory:', error);
           document.getElementById('itemGrid').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>加载失败，请刷新重试</p></div>';
@@ -1350,28 +1521,109 @@
         return items;
       }
 
-      function populateServerSelect() {
-        const sel = document.getElementById('serverSelect');
-        sel.innerHTML = '<option value="">请选择区服...</option>';
-        allServers.forEach(sv => {
-          const opt = document.createElement('option');
-          opt.value = sv.server;
-          opt.textContent = sv.server;
-          sel.appendChild(opt);
+      // === 视图切换：首页（服务器网格） / 区服详情 ===
+      const GROUP_ORDER = ['黄金', '黄金爆爽', '爆爽', '集结', '周年', '万魂', '神龍界域', '诸天万域'];
+      const OTHER_GROUP = '其他';
+
+      function getServerGroup(serverName) {
+        if (!serverName) return OTHER_GROUP;
+        if (serverName.includes('·')) return serverName.split('·')[0];
+        return serverName;
+      }
+
+      function countServerItems(sv) {
+        if (!sv.items || !Array.isArray(sv.items)) return 0;
+        return sv.items.reduce((sum, cat) => sum + ((cat.list || []).length), 0);
+      }
+
+      function renderHomeView() {
+        const container = document.getElementById('serverGridContainer');
+        const keyword = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+        let servers = allServers;
+        if (keyword) servers = servers.filter(sv => sv.server.toLowerCase().includes(keyword));
+
+        // 统计总数
+        const totalSrv = allServers.length;
+        const totalItems = allItems.length;
+        document.getElementById('totalServerCount').textContent = totalSrv;
+        document.getElementById('totalItemCount').textContent = totalItems;
+
+        if (servers.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到匹配的区服</p></div>';
+          return;
+        }
+
+        // 分组
+        const groups = {};
+        servers.forEach(sv => {
+          const g = getServerGroup(sv.server);
+          if (!groups[g]) groups[g] = [];
+          groups[g].push(sv);
         });
-        sel.onchange = function() {
-          currentServer = this.value;
-          currentCategory = '';
-          document.getElementById('searchInput').value = '';
-          document.getElementById('categoryRow').style.display = currentServer ? 'flex' : 'none';
-          renderCategoryChips();
-          renderItemGrid();
-        };
+
+        // 按指定顺序排序
+        const orderedKeys = Object.keys(groups).sort((a, b) => {
+          const ai = GROUP_ORDER.indexOf(a);
+          const bi = GROUP_ORDER.indexOf(b);
+          if (ai === -1 && bi === -1) return a.localeCompare(b);
+          if (ai === -1) return 1;
+          if (bi === -1) return -1;
+          return ai - bi;
+        });
+
+        container.innerHTML = orderedKeys.map(g => {
+          const list = groups[g].slice().sort((a, b) => a.server.localeCompare(b.server, 'zh-Hans-CN'));
+          return `
+            <div class="server-group">
+              <div class="server-group-title">
+                <span>${g}</span>
+                <span class="group-count">${list.length} 个区服</span>
+              </div>
+              <div class="server-grid">
+                ${list.map(sv => `
+                  <div class="server-card" onclick="openServer('${sv.server.replace(/'/g, "\\'")}')">
+                    <div class="server-name">${sv.server}</div>
+                    <span class="server-count">${countServerItems(sv)} 件</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function openServer(serverName) {
+        currentServer = serverName;
+        currentCategory = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('homeView').style.display = 'none';
+        document.getElementById('serverView').style.display = 'block';
+        document.getElementById('currentServerName').textContent = serverName;
+        const items = allItems.filter(i => i.server === serverName);
+        document.getElementById('currentServerItemCount').textContent = '· ' + items.length + ' 件';
+        renderCategoryChips();
+        renderItemGrid();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function goHome() {
+        currentServer = '';
+        currentCategory = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('serverView').style.display = 'none';
+        document.getElementById('homeView').style.display = 'block';
+        renderHomeView();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
       function renderCategoryChips() {
         let items = allItems;
         if (currentServer) items = items.filter(i => i.server === currentServer);
+        if (items.length === 0) {
+          const row = document.getElementById('categoryRow');
+          if (row) row.innerHTML = '<div class="category-chip active" data-cat="">全部分类</div>';
+          return;
+        }
         const cats = [...new Set(items.map(i => i.category).filter(Boolean))];
         const row = document.getElementById('categoryRow');
         row.innerHTML = `<div class="category-chip${!currentCategory ? ' active' : ''}" data-cat="">全部分类</div>` +
@@ -1388,7 +1640,7 @@
       function renderItemGrid() {
         const grid = document.getElementById('itemGrid');
         if (!currentServer) {
-          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🎮</div><p style="font-size:1.1rem;font-weight:600;">请先在上方选择区服</p><p style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.5rem;">选择后即可查看该区服的存货</p></div>';
+          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🎮</div><p>请返回区服列表选择一个区服</p></div>';
           return;
         }
         let items = allItems;
@@ -1592,17 +1844,12 @@
         } catch (e) { alert('查询失败：' + e.message); }
       }
 
-      function resetFilters() {
-        currentServer = '';
-        currentCategory = '';
-        document.getElementById('serverSelect').value = '';
-        renderCategoryChips();
-        renderItemGrid();
-      }
+      function resetFilters() { goHome(); }
 
       function setupSearch() {
         document.getElementById('searchInput').addEventListener('input', function() {
-          renderItemGrid();
+          if (currentServer) renderItemGrid();
+          else renderHomeView();
         });
       }
     </script>
