@@ -1583,12 +1583,20 @@
             if (!cat.list || !Array.isArray(cat.list)) return;
             cat.list.forEach((it, idx) => {
               if (!it || !it.n) return;
+              // Price logic: use it.price if set, else fallback to 0
+              // Bulk pricing: it.bp (bulk price) and it.bq (bulk min qty) for display
+              const priceInfo = it.price
+                ? (it.bp && it.bq && it.q >= it.bq ? it.bp : it.price)
+                : 0;
               items.push({
                 id: `${sv.server}__${cat.cat || cat.category || '未分类'}__${idx}__${it.n}`,
                 name: it.n,
                 server: sv.server,
                 category: cat.cat || cat.category || '未分类',
-                price: it.p || 0,
+                price: priceInfo,
+                basePrice: it.price || 0,
+                bulkPrice: it.bp || null,
+                bulkMinQty: it.bq || null,
                 stock: it.q || 0
               });
             });
@@ -1741,7 +1749,7 @@
                 </div>
                 <div class="item-meta">
                   <span class="item-server-tag">${item.server}</span><span class="tag-sep"> / </span><span class="item-cat-tag">${item.category}</span>
-                  <span class="item-price">￥${item.price}</span>
+                  <span class="item-price">￥${item.price}${item.bulkPrice && item.bulkMinQty ? `<span style="font-size:10px;color:var(--gold);"> ${item.bulkMinQty}+特惠</span>` : ''}</span>
                 </div>
               </div>
               ${inCart
@@ -1780,7 +1788,7 @@
           </div>
           <div style="padding:0.75rem 1rem;background:var(--bg-surface-secondary);border-radius:8px;margin-bottom:0.5rem;">
             <div style="font-size:0.85rem;color:var(--text-secondary);">单价</div>
-            <div style="font-size:1.5rem;font-weight:800;color:var(--primary-color);">￥${item.price}</div>
+            <div style="font-size:1.5rem;font-weight:800;color:var(--primary-color);">￥${item.price}${item.bulkPrice && item.bulkMinQty ? `<span style="font-size:0.85rem;color:var(--gold);"> (${item.bulkMinQty}+ ￥${item.bulkPrice})</span>` : ''}</div>
           </div>
           <button class="btn btn-block" style="margin-top:0.5rem;" onclick="addToCart('${item.id}'); closeItemDetail();">加入购物车</button>
         `;
@@ -1846,14 +1854,23 @@
           <div class="cart-item">
             <div class="cart-item-info">
               <div class="cart-item-name">${item.name}</div>
-              <div class="cart-item-price">￥${item.price} × ${item.qty} = ￥${item.price * item.qty}</div>
+              <div class="cart-item-price">
+                ${item.bulkPrice && item.bulkMinQty && item.qty >= item.bulkMinQty
+                  ? `￥${item.bulkPrice} × ${item.qty} = <span style="color:var(--gold)">￥${(item.bulkPrice * item.qty).toFixed(1)}</span>`
+                  : `￥${item.price} × ${item.qty} = ￥${(item.price * item.qty).toFixed(1)}`
+                }
+              </div>
               <div class="cart-item-qty">${item.server} · ${item.category}</div>
             </div>
             <button class="cart-item-remove" onclick="removeFromCart('${item.id}')">×</button>
           </div>
         `).join('');
         footer.style.display = '';
-        const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
+        // 计算总价：使用批发价如果达到起批量
+        const total = cart.reduce((s, c) => {
+          const unitPrice = c.bulkPrice && c.bulkMinQty && c.qty >= c.bulkMinQty ? c.bulkPrice : c.price;
+          return s + unitPrice * c.qty;
+        }, 0);
         document.getElementById('cartTotal').textContent = `￥${total}`;
       }
 
