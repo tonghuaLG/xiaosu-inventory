@@ -279,6 +279,25 @@ app.post('/api/orders/export', (req, res) => {
   res.json({ orders: db.orders || [] });
 });
 
+// Self-update endpoint: accepts base64-encoded server.js, writes it, and restarts
+app.post('/api/admin/selfupdate', (req, res) => {
+  const { password, code } = req.body;
+  if (password !== ADMIN_PASS) return res.status(403).json({ error: 'password_error' });
+  if (!code) return res.status(400).json({ error: 'no_code' });
+  try {
+    const buf = Buffer.from(code, 'base64');
+    const myPath = __filename;
+    fs.writeFileSync(myPath + '.new', buf);
+    const { execSync } = require('child_process');
+    // Restart in background, then exit
+    execSync(`cp ${myPath} ${myPath}.bak && mv ${myPath}.new ${myPath} && kill -9 $(lsof -t -i:${PORT}) && sleep 1 && cd ${path.dirname(myPath)} && nohup node ${myPath} >> server.log 2>&1 &`);
+    res.json({ ok: true, size: buf.length });
+    setTimeout(() => process.exit(0), 500);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ===== Startup =====
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server started on port ${PORT}`);
